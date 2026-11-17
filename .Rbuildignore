@@ -6,3 +6,4 @@
 ^pkgdown$
 ^air\.toml$
 ^README\.Rmd$
+^TODO\.md$

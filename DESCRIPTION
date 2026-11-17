@@ -28,9 +28,12 @@ Suggests:
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1.9000
 Collate: 
+    'columns.R'
+    'convert.R'
     'options.R'
     'doc.R'
     'gristmillr-package.R'
     'import-standalone-obj-type.R'
     'import-standalone-types-check.R'
     'request.R'
+    'tables.R'

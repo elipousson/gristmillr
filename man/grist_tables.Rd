@@ -10,6 +10,11 @@ grist_tables(doc)
 grist_table_create(doc, table, columns = character())
 }
 \arguments{
+\item{doc}{A \code{grist_doc} object, document ID or document URL. See
+\code{\link[=grist_doc]{grist_doc()}}.}
+
+\item{table}{Table ID, as listed by \code{\link[=grist_tables]{grist_tables()}}.}
+
 \item{columns}{Columns for the new table, in any form accepted by
 \code{\link[=grist_columns_add]{grist_columns_add()}}.}
 }

@@ -35,5 +35,7 @@ Collate:
     'gristmillr-package.R'
     'import-standalone-obj-type.R'
     'import-standalone-types-check.R'
+    'records.R'
     'request.R'
+    'sql.R'
     'tables.R'

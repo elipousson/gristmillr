@@ -13,6 +13,11 @@ grist_columns_add(doc, table, columns)
 grist_columns_modify(doc, table, columns)
 }
 \arguments{
+\item{doc}{A \code{grist_doc} object, document ID or document URL. See
+\code{\link[=grist_doc]{grist_doc()}}.}
+
+\item{table}{Table ID, as listed by \code{\link[=grist_tables]{grist_tables()}}.}
+
 \item{hidden}{If \code{TRUE}, include hidden columns such as \code{manualSort}.}
 
 \item{columns}{Column definitions. One of:

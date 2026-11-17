@@ -9,3 +9,8 @@
   `grist_records_delete()` read and write records with a `convert` enum
   (`"auto"`, `"basic"` or `"raw"`). `grist_sql()` and `grist_count()` run SQL
   queries.
+* `grist_doc_create()`, `grist_doc_info()`, `grist_doc_update()`,
+  `grist_doc_move()`, `grist_doc_delete()` and `grist_doc_restore()` manage
+  documents, and `grist_orgs()`, `grist_workspaces()`, `grist_docs()` and
+  `grist_workspace_*()` list and manage orgs and workspaces. Deleting takes
+  `mode = "trash"` or `"permanent"` and asks for confirmation.

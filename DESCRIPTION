@@ -29,7 +29,9 @@ Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1.9000
 Collate: 
     'columns.R'
+    'confirm.R'
     'convert.R'
+    'doc-manage.R'
     'options.R'
     'doc.R'
     'gristmillr-package.R'
@@ -39,3 +41,4 @@ Collate:
     'request.R'
     'sql.R'
     'tables.R'
+    'workspaces.R'

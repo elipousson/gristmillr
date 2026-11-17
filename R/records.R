@@ -78,9 +78,7 @@ grist_records <- function(
   check_string(table)
   convert <- arg_match(convert)
   options <- as_read_options(options)
-  check_filter(filter)
-  check_character(sort, allow_null = TRUE)
-  check_number_whole(limit, min = 0, allow_null = TRUE)
+  check_list_query(filter, sort, limit)
 
   if (options@cell_format == "typed" && convert != "raw") {
     cli::cli_abort(
@@ -92,12 +90,8 @@ grist_records <- function(
   }
 
   req <- grist_request(doc, "tables", table, "records") |>
+    req_list_query(filter, sort, limit) |>
     httr2::req_url_query(
-      filter = if (length(filter) > 0) {
-        as.character(jsonlite::toJSON(filter, auto_unbox = FALSE))
-      },
-      sort = if (length(sort) > 0) paste(sort, collapse = ","),
-      limit = limit,
       hidden = if (options@hidden) "true",
       cellFormat = if (options@cell_format == "typed") "typed"
     )
@@ -251,4 +245,22 @@ check_filter <- function(
       call = call
     )
   }
+}
+
+# Query parameters shared by the endpoints that list rows.
+check_list_query <- function(filter, sort, limit, call = caller_env()) {
+  check_filter(filter, call = call)
+  check_character(sort, allow_null = TRUE, call = call)
+  check_number_whole(limit, min = 0, allow_null = TRUE, call = call)
+}
+
+req_list_query <- function(req, filter = NULL, sort = NULL, limit = NULL) {
+  httr2::req_url_query(
+    req,
+    filter = if (length(filter) > 0) {
+      as.character(jsonlite::toJSON(filter, auto_unbox = FALSE))
+    },
+    sort = if (length(sort) > 0) paste(sort, collapse = ","),
+    limit = limit
+  )
 }

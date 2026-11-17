@@ -80,16 +80,6 @@ grist_doc_download <- function(
       '{.arg no_history} and {.arg template} can only be used with {.code format = "grist"}.'
     )
   }
-  if (file.exists(path) && !overwrite) {
-    cli::cli_abort(
-      c(
-        "{.file {path}} already exists.",
-        i = "Use {.code overwrite = TRUE} to replace it."
-      ),
-      class = "gristmillr_file_exists"
-    )
-  }
-
   req <- if (format == "grist") {
     grist_request(doc, "download") |>
       httr2::req_url_query(
@@ -104,18 +94,7 @@ grist_doc_download <- function(
       )
   }
 
-  tmp <- tempfile(fileext = paste0(".", format))
-  on.exit(unlink(tmp), add = TRUE)
-  resp <- perform_request(req, path = tmp)
-  # Responses that arrive in memory (e.g. mocked ones) aren't streamed to disk.
-  if (!file.exists(tmp)) {
-    writeBin(httr2::resp_body_raw(resp), tmp)
-  }
-
-  if (!file.copy(tmp, path, overwrite = overwrite)) {
-    cli::cli_abort("Can't write to {.file {path}}.")
-  }
-  invisible(path)
+  download_file(req, path, overwrite, fileext = paste0(".", format))
 }
 
 #' @rdname grist_doc_download
@@ -131,4 +110,38 @@ grist_table_schema <- function(doc, table, col_names = c("id", "label")) {
       header = if (col_names == "label") "label" else "colId"
     ) |>
     grist_perform()
+}
+
+# Stream a request to `path`. The file is written to a temporary location and
+# copied into place only if the request succeeds.
+download_file <- function(
+  req,
+  path,
+  overwrite = FALSE,
+  fileext = "",
+  call = caller_env()
+) {
+  if (file.exists(path) && !overwrite) {
+    cli::cli_abort(
+      c(
+        "{.file {path}} already exists.",
+        i = "Use {.code overwrite = TRUE} to replace it."
+      ),
+      class = "gristmillr_file_exists",
+      call = call
+    )
+  }
+
+  tmp <- tempfile(fileext = fileext)
+  on.exit(unlink(tmp), add = TRUE)
+  resp <- perform_request(req, path = tmp, call = call)
+  # Responses that arrive in memory (e.g. mocked ones) aren't streamed to disk.
+  if (!file.exists(tmp)) {
+    writeBin(httr2::resp_body_raw(resp), tmp)
+  }
+
+  if (!file.copy(tmp, path, overwrite = overwrite)) {
+    cli::cli_abort("Can't write to {.file {path}}.", call = call)
+  }
+  invisible(path)
 }

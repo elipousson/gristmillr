@@ -27,8 +27,10 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
+    nanoparquet,
     tibble,
-    withr
+    withr,
+    yaml12
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1.9000
@@ -37,14 +39,17 @@ Collate:
     'columns.R'
     'confirm.R'
     'convert.R'
+    'data-dict.R'
     'doc-manage.R'
     'options.R'
     'doc.R'
     'download.R'
+    'export.R'
     'gristmillr-package.R'
     'history.R'
     'import-standalone-obj-type.R'
     'import-standalone-types-check.R'
+    'import.R'
     'records.R'
     'refs.R'
     'request.R'

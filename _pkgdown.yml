@@ -22,6 +22,10 @@ reference:
   - title: Attachments
     contents:
       - grist_attachments
+  - title: Export and import
+    contents:
+      - grist_export
+      - grist_import
   - title: History
     contents:
       - grist_doc_history

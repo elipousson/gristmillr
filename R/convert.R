@@ -302,6 +302,9 @@ df_to_records <- function(data, with_id = FALSE, convert = "auto") {
   map(seq_len(n), function(i) {
     # Index with `[` then `[[` so `NULL` cells stay explicit JSON nulls.
     fields <- lapply(cells, function(x) x[i][[1]])
+    if (length(fields) == 0) {
+      fields <- empty_object()
+    }
     rec <- list(fields = fields)
     if (with_id) {
       rec <- c(list(id = as.integer(ids[[i]])), rec)

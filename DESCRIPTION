@@ -16,6 +16,7 @@ Depends:
     R (>= 4.2.0)
 Imports: 
     cli,
+    curl,
     httr2 (>= 1.1.0),
     jsonlite,
     rlang (>= 1.1.0),
@@ -32,6 +33,7 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1.9000
 Collate: 
+    'attachments.R'
     'columns.R'
     'confirm.R'
     'convert.R'

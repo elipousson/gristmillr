@@ -19,6 +19,9 @@ reference:
     contents:
       - grist_tables
       - grist_columns
+  - title: Attachments
+    contents:
+      - grist_attachments
   - title: Orgs and workspaces
     contents:
       - grist_orgs

@@ -46,3 +46,5 @@
   from such a dictionary, converting foreign keys to `Ref` columns, and can
   load data prepared outside Grist. Both need the yaml12 and nanoparquet
   packages.
+* `vignette("migrating-data")` explains how to move tables in and out of Grist
+  with `grist_export()` and `grist_import()`.

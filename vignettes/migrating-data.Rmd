@@ -1,0 +1,232 @@
+---
+title: "Moving data in and out of Grist"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Moving data in and out of Grist}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+`grist_export()` and `grist_import()` move whole sets of tables between Grist
+and a folder of files. The folder holds one Parquet file per table and a
+`data-dict.yaml` that describes the tables: column types, labels and
+descriptions, and how tables refer to each other. The description follows the
+[data-dict](https://data-dict.tidyverse.org/) specification, so other tools
+can read it, and `data-dict validate-data` can check the files.
+
+Both functions need the yaml12 and nanoparquet packages, which gristmillr only
+suggests.
+
+```{r}
+library(gristmillr)
+
+doc <- grist_doc("<doc id>")
+```
+
+## Export a document
+
+```{r}
+grist_export(doc, "pets-export")
+#>    table rows columns                   path
+#> 1 People    2       7 pets-export/People.parquet
+#> 2 Orders    3       4 pets-export/Orders.parquet
+```
+
+Pass `tables` to export some of them. Tables are read with
+`convert = "auto"`, so dates, integers and logicals keep their types in the
+Parquet files, and the dictionary records what Parquet can't: time zones, the
+choices of `Choice` columns, column labels and descriptions, and references.
+
+The dictionary starts like this:
+
+```yaml
+$version: 0.1.0
+label: Pets
+tables:
+  - name: Orders
+    source:
+      parquet: Orders.parquet
+    columns:
+      - name: id
+        type: number(id)
+        constraints: [primary_key]
+        examples: [1, 2, 3]
+      - name: person
+        type: number(id)
+        constraints: [foreign_key]
+        examples: [1, 2]
+relationships:
+  - join: Orders.person = People.id
+    cardinality: many-to-one
+```
+
+Every table has Grist's row `id` as its primary key, and a `Ref` column is a
+foreign key to it. Columns that hold lists of IDs (`RefList`, `Attachments`)
+have no relationship, because data-dict can't declare a foreign key on a list.
+
+The dictionary holds up to five real example values for each column. If the
+dictionary will be shared separately from the data, use
+`grist_export(doc, "pets-export", examples = "none")`, which leaves them out
+and adds a `todo` to each column.
+
+## Import into a document
+
+```{r}
+new <- grist_doc_create(workspace = 1234, name = "Pets copy")
+grist_import(new, "pets-export")
+```
+
+`grist_import()` creates each table, loads the rows, and then rewrites
+every reference from the source key to the row ID Grist assigned. Tables can
+be loaded in any order, and a table may refer to itself. Tables and columns
+named in the dictionary are created with the types in the table below.
+
+| data-dict | Grist |
+|---|---|
+| `string` | `Text` |
+| `number`, `number(id)` | `Int` if the Parquet column holds integers, otherwise `Numeric` |
+| `boolean`, `date` | `Bool`, `Date` |
+| `datetime` | `DateTime` in the column's `time_zone` (`UTC` if `naive`) |
+| `enum`, `list(enum)` | `Choice`, `ChoiceList`, with the listed `values` as choices |
+| `list(string)` | `ChoiceList` |
+| `foreign_key` with a relationship | `Ref` |
+| no `type` | `Any` |
+
+Only columns in the dictionary are imported. A column named `id` isn't created,
+because Grist has its own row IDs, but it works as a key for references. Other
+names that Grist can't use as column IDs are changed (a column called `ID` gets
+the ID `ID2`) and keep their original name as the label.
+
+The function checks everything it can before changing anything: it stops if a
+table already exists (unless `if_exists = "append"`) and if a reference points
+at a key that doesn't exist (unless `orphans = "empty"`). If a request still
+fails part way, the tables and rows already created stay in the document.
+
+Three arguments adjust the result:
+
+```{r}
+grist_import(
+  new,
+  "pets-export",
+  # Grist type for a column the dictionary can't describe
+  types = c("Orders.buddies" = "RefList:People"),
+  # Which column a reference shows, instead of the row ID
+  display = c("Orders.person" = "name"),
+  orphans = "empty"
+)
+```
+
+## Bring in data from another tool
+
+Moving a list or table out of another low-code tool needs three steps, and
+the second is the only one gristmillr doesn't do for you.
+
+1. **Get each table into a data frame.** How depends on the tool. The data
+   frames need a column that identifies each row (a primary key), and
+   columns that point at other tables use those keys.
+2. **Describe the tables.** Write the data frames to Parquet and write a
+   `data-dict.yaml` saying which column is the primary key, which columns are
+   foreign keys, and what type each column is.
+3. **Import.** `grist_import()` turns the foreign keys into references.
+
+As an example, take two lists: *Projects*, with an `ID` column and a
+`Status` choice, and *Tasks*, with a `Project` lookup column that holds a
+project `ID`, and a `Related` lookup that holds several project `ID`s.
+
+```{r}
+dir.create("migration")
+nanoparquet::write_parquet(projects, "migration/Projects.parquet")
+nanoparquet::write_parquet(tasks, "migration/Tasks.parquet")
+```
+
+The dictionary can be written by hand, or built in R and saved with
+`yaml12::write_yaml()`:
+
+```{r}
+dict <- list(
+  `$version` = "0.1.0",
+  `$learn_more` = "https://data-dict.tidyverse.org/",
+  tables = list(
+    list(
+      name = "Projects",
+      source = list(parquet = "Projects.parquet"),
+      columns = list(
+        list(name = "ID", type = "number(id)", constraints = list("primary_key"),
+             examples = list(1, 2, 3)),
+        list(name = "Title", type = "string", examples = list("Roof", "Garden")),
+        list(name = "Status", type = "enum", values = list("Planning", "Active", "Closed"))
+      )
+    ),
+    list(
+      name = "Tasks",
+      source = list(parquet = "Tasks.parquet"),
+      columns = list(
+        list(name = "Task", type = "string", examples = list("Order tiles")),
+        list(name = "Project", type = "number(id)", constraints = list("foreign_key"),
+             examples = list(1, 2)),
+        list(name = "Related", type = "list(number(id))", examples = list(1, 2)),
+        list(name = "Due", type = "date", range = list("2026-01-01", "2026-12-31"))
+      )
+    )
+  ),
+  relationships = list(
+    list(join = "Tasks.Project = Projects.ID", cardinality = "many-to-one")
+  )
+)
+yaml12::write_yaml(dict, "migration/data-dict.yaml")
+```
+
+The `Project` column has a relationship, so it becomes a `Ref` column. data-dict
+can't declare a foreign key on a list, so `Related` needs `types`. Its target
+table needs a single primary key, and the values in the list must be those keys.
+
+```{r}
+grist_import(
+  new,
+  "migration",
+  types = c("Tasks.Related" = "RefList:Projects"),
+  display = c("Tasks.Project" = "Title")
+)
+```
+
+Before importing, `data-dict validate-data migration` checks the files against
+the dictionary, including that every foreign key value exists in the table it
+points to. The `data-dict` command-line tool is separate from gristmillr.
+
+### Mapping column types
+
+Whatever the source tool calls its types, they map to the data-dict types in
+the table above. The common cases:
+
+| Source column | data-dict | Grist |
+|---|---|---|
+| Single line or multiline text | `string` | `Text` |
+| Number, currency | `number` | `Int` or `Numeric` |
+| Yes/no | `boolean` | `Bool` |
+| Date, date and time | `date`, `datetime` | `Date`, `DateTime` |
+| Single choice | `enum` with `values` | `Choice` |
+| Multiple choice | `list(enum)` | `ChoiceList` |
+| Lookup to another table | `number(id)` with `foreign_key` | `Ref` |
+| Lookup with several values | `list(number(id))`, plus `types` | `RefList` |
+| Person, hyperlink | `string` | `Text` |
+
+Treat the mapping as a starting point and check it against your data. A
+choice column with free-text answers is a `string`, not an `enum`, and a
+number column that is really an identifier is a `number(id)`.
+
+## What isn't moved
+
+* **Formulas.** Formula columns are exported as their values. Grist formulas
+  are Python and don't translate from other tools' expressions.
+* **Attachments.** Files aren't included. Use `grist_attachments()` and
+  `grist_attachment_download()` to move them.
+* **Views, widgets and access rules.** Only tables and columns are described.
+* **Row order and IDs.** Rows are loaded in file order, and Grist assigns new
+  row IDs. Keep the source key as a column if you need it.
+* **Personal data.** The dictionary and the Parquet files contain your data. Use
+  `examples = "none"` to keep values out of the dictionary, and treat the
+  folder as sensitive if the data are.

@@ -57,7 +57,8 @@ grist_sql(doc, "SELECT status, COUNT(*) AS n FROM People GROUP BY status")
 To move data in or out, `grist_export()` writes tables to Parquet files
 with a [data-dict](https://data-dict.tidyverse.org/) description of
 their columns and references, and `grist_import()` loads them into
-another document.
+another document. See `vignette("migrating-data")` for moving data in
+from other tools.
 
 See `vignette("gristmillr")` to get started and
 `vignette("joining-tables")` for working with reference columns.

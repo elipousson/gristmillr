@@ -31,3 +31,30 @@ test_that("grist_table_create() posts the table definition", {
     '{"tables":[{"id":"Pets","columns":[{"id":"name","fields":{"type":"Text"}}]}]}'
   )
 })
+
+test_that("grist_table_create() sets column descriptions in a second request", {
+  local_grist_env()
+  mock <- local_grist_mock(
+    json_resp('{"tables":[{"id":"Pets"}]}'),
+    json_resp("")
+  )
+
+  id <- grist_table_create(
+    test_doc(),
+    "Pets",
+    data.frame(
+      id = c("name", "age"),
+      type = c("Text", "Int"),
+      description = c("Pet name", NA)
+    )
+  )
+
+  expect_equal(id, "Pets")
+  expect_length(mock$reqs, 2)
+  expect_match(mock$reqs[[2]]$url, "/tables/Pets/columns$")
+  expect_equal(httr2::req_get_method(mock$reqs[[2]]), "PATCH")
+  expect_equal(
+    as.character(req_body(mock$reqs[[2]])),
+    '{"columns":[{"id":"name","fields":{"description":"Pet name"}}]}'
+  )
+})

@@ -26,26 +26,46 @@ grist_columns_modify(doc, table, columns)
 \item A named character vector, where names are column IDs and values are
 column types, e.g. \code{c(name = "Text", age = "Int")}.
 \item A data frame with an \code{id} column and any of the columns \code{type}, \code{label},
-\code{formula}, \code{is_formula}, \code{widget_options}, \code{visible_col},
+\code{description}, \code{formula}, \code{is_formula}, \code{widget_options}, \code{visible_col},
 \code{untie_col_id_from_label} and (for modifying only) \code{col_id}, which
-renames the column. \code{NA} values are not sent.
+renames the column. \code{NA} values are not sent. Use \code{description = ""} to
+clear a description.
 }}
 }
 \value{
 \code{grist_columns()} returns a data frame with one row per column:
-\code{id}, \code{label}, \code{type}, \code{is_formula}, \code{formula}, \code{widget_options},
-\code{visible_col} and \code{col_ref}. \code{grist_columns_add()} returns the IDs of the
+\code{id}, \code{label}, \code{description}, \code{type}, \code{is_formula}, \code{formula},
+\code{widget_options}, \code{visible_col} and \code{col_ref}. \code{grist_columns_add()} returns the IDs of the
 new columns, and \code{grist_columns_modify()} returns \code{doc}, both invisibly.
 }
 \description{
 \code{grist_columns()} lists the columns of a table. \code{grist_columns_add()} and
 \code{grist_columns_modify()} change a table's schema.
 }
+\section{Descriptions}{
+
+Grist ignores a column \code{description} when a column is created. When
+\code{columns} includes descriptions, \code{grist_columns_add()} (and
+\code{\link[=grist_table_create]{grist_table_create()}}) therefore make a second request to set them.
+\code{grist_columns()} returns \code{NA} for columns that have no description.
+}
+
 \examples{
 \dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
 grist_columns(doc, "People")
 grist_columns_add(doc, "People", c(city = "Text", age = "Int"))
+
+grist_columns_add(
+  doc,
+  "People",
+  data.frame(id = "email", type = "Text", description = "Work address")
+)
+grist_columns_modify(
+  doc,
+  "People",
+  data.frame(id = "email", description = "Primary work email")
+)
 \dontshow{\}) # examplesIf}
 }
 \seealso{

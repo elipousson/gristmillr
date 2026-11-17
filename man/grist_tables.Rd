@@ -16,7 +16,7 @@ grist_table_create(doc, table, columns = character())
 \item{table}{Table ID, as listed by \code{\link[=grist_tables]{grist_tables()}}.}
 
 \item{columns}{Columns for the new table, in any form accepted by
-\code{\link[=grist_columns_add]{grist_columns_add()}}.}
+\code{\link[=grist_columns_add]{grist_columns_add()}}, including column descriptions.}
 }
 \value{
 \code{grist_tables()} returns a data frame with one row per table and

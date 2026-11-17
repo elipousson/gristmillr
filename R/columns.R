@@ -11,18 +11,36 @@
 #'   * A named character vector, where names are column IDs and values are
 #'     column types, e.g. `c(name = "Text", age = "Int")`.
 #'   * A data frame with an `id` column and any of the columns `type`, `label`,
-#'     `formula`, `is_formula`, `widget_options`, `visible_col`,
+#'     `description`, `formula`, `is_formula`, `widget_options`, `visible_col`,
 #'     `untie_col_id_from_label` and (for modifying only) `col_id`, which
-#'     renames the column. `NA` values are not sent.
+#'     renames the column. `NA` values are not sent. Use `description = ""` to
+#'     clear a description.
+#' @section Descriptions:
+#' Grist ignores a column `description` when a column is created. When
+#' `columns` includes descriptions, `grist_columns_add()` (and
+#' [grist_table_create()]) therefore make a second request to set them.
+#' `grist_columns()` returns `NA` for columns that have no description.
+#'
 #' @returns `grist_columns()` returns a data frame with one row per column:
-#'   `id`, `label`, `type`, `is_formula`, `formula`, `widget_options`,
-#'   `visible_col` and `col_ref`. `grist_columns_add()` returns the IDs of the
+#'   `id`, `label`, `description`, `type`, `is_formula`, `formula`,
+#'   `widget_options`, `visible_col` and `col_ref`. `grist_columns_add()` returns the IDs of the
 #'   new columns, and `grist_columns_modify()` returns `doc`, both invisibly.
 #' @family schema
 #' @examplesIf FALSE
 #' doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
 #' grist_columns(doc, "People")
 #' grist_columns_add(doc, "People", c(city = "Text", age = "Int"))
+#'
+#' grist_columns_add(
+#'   doc,
+#'   "People",
+#'   data.frame(id = "email", type = "Text", description = "Work address")
+#' )
+#' grist_columns_modify(
+#'   doc,
+#'   "People",
+#'   data.frame(id = "email", description = "Primary work email")
+#' )
 #' @export
 grist_columns <- function(doc, table, hidden = FALSE) {
   doc <- grist_doc(doc)
@@ -46,7 +64,10 @@ grist_columns_add <- function(doc, table, columns) {
   body <- grist_request(doc, "tables", table, "columns") |>
     req_json_body(list(columns = columns_spec(columns))) |>
     grist_perform()
-  invisible(map_chr(body$columns, function(x) x$id))
+
+  ids <- map_chr(body$columns, function(x) x$id)
+  set_column_descriptions(doc, table, columns, ids)
+  invisible(ids)
 }
 
 #' @rdname grist_columns
@@ -72,6 +93,11 @@ columns_to_df <- function(columns) {
     list(
       id = field_vec(columns, "id", NA_character_, top = TRUE),
       label = field_vec(columns, "label", NA_character_),
+      description = na_if_empty(field_vec(
+        columns,
+        "description",
+        NA_character_
+      )),
       type = field_vec(columns, "type", NA_character_),
       is_formula = field_vec(columns, "isFormula", NA),
       formula = field_vec(columns, "formula", NA_character_),
@@ -98,6 +124,7 @@ field_vec <- function(items, name, ptype, top = FALSE) {
 column_field_names <- c(
   type = "type",
   label = "label",
+  description = "description",
   formula = "formula",
   is_formula = "isFormula",
   widget_options = "widgetOptions",
@@ -156,4 +183,31 @@ columns_spec <- function(columns, call = caller_env()) {
 
 map_chr <- function(.x, .f, ...) {
   vapply(.x, .f, character(1), ...)
+}
+
+na_if_empty <- function(x) {
+  x[!is.na(x) & !nzchar(x)] <- NA_character_
+  x
+}
+
+# Grist ignores `description` when creating columns, so set it afterwards.
+# `ids` are the IDs of the created columns, in the order of `columns`.
+set_column_descriptions <- function(doc, table, columns, ids) {
+  if (!is.data.frame(columns) || !"description" %in% names(columns)) {
+    return(invisible())
+  }
+  has_description <- !is.na(columns$description) & nzchar(columns$description)
+  if (!any(has_description)) {
+    return(invisible())
+  }
+
+  descriptions <- data.frame(
+    id = ids[has_description],
+    description = columns$description[has_description]
+  )
+  grist_request(doc, "tables", table, "columns") |>
+    httr2::req_method("PATCH") |>
+    req_json_body(list(columns = columns_spec(descriptions))) |>
+    grist_perform()
+  invisible()
 }

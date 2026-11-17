@@ -23,7 +23,7 @@
     Condition
       Error:
       ! `columns` has unknown column: nope.
-      i Allowed columns are id, type, label, formula, is_formula, widget_options, visible_col, untie_col_id_from_label, and col_id.
+      i Allowed columns are id, type, label, description, formula, is_formula, widget_options, visible_col, untie_col_id_from_label, and col_id.
 
 # grist_columns_modify() patches columns
 

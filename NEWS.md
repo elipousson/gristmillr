@@ -23,3 +23,5 @@
   and download attachments.
 * `grist_webhooks()`, `grist_webhook_create()`, `grist_webhook_update()`,
   `grist_webhook_delete()` and `grist_webhook_queue_clear()` manage webhooks.
+* `grist_columns()` returns column descriptions, and `grist_columns_add()`,
+  `grist_columns_modify()` and `grist_table_create()` can set them.

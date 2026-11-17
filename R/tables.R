@@ -2,7 +2,7 @@
 #'
 #' @inheritParams grist_records
 #' @param columns Columns for the new table, in any form accepted by
-#'   [grist_columns_add()].
+#'   [grist_columns_add()], including column descriptions.
 #' @returns `grist_tables()` returns a data frame with one row per table and
 #'   columns `id`, `table_ref` and `on_demand`. `grist_table_create()` returns
 #'   the ID of the new table invisibly.
@@ -39,5 +39,18 @@ grist_table_create <- function(doc, table, columns = character()) {
   body <- grist_request(doc, "tables") |>
     req_json_body(list(tables = list(spec))) |>
     grist_perform()
-  invisible(body$tables[[1]]$id)
+
+  table_id <- body$tables[[1]]$id
+  set_column_descriptions(doc, table_id, columns, columns_spec_ids(columns))
+  invisible(table_id)
+}
+
+columns_spec_ids <- function(columns) {
+  if (is.data.frame(columns)) {
+    columns$id
+  } else if (is.null(names(columns))) {
+    columns
+  } else {
+    names(columns)
+  }
 }

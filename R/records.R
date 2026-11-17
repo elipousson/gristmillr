@@ -46,11 +46,24 @@
 #' @param data A data frame of records. For `grist_records_add()`, each column
 #'   must be a column of the Grist table. For `grist_records_update()`, `data`
 #'   must also have an integer `id` column.
+#' @param by Character vector of columns that identify a record, such as
+#'   `"email"`. Each row of `data` is matched against the table on these
+#'   columns. `data` must contain them, with no missing values and no
+#'   duplicated combinations.
+#' @param mode What to do with each row of `data`: `"upsert"` updates the
+#'   record with matching `by` values and adds a record if there is none.
+#'   `"update"` only updates matching records and skips rows that match
+#'   nothing. `"insert"` only adds records and skips rows that already match.
+#'   Grist does not report which rows were skipped.
+#' @param onmany What to do when several records in the table match one row
+#'   of `data`: update the `"first"` one, update `"all"` of them, or update
+#'   `"none"` of them.
 #' @param ids Row IDs to delete, either an integer vector or a data frame with
 #'   an `id` column (such as the result of [grist_records()]).
 #' @returns `grist_records()` returns a data frame whose first column `id` is
-#'   the row ID. `grist_records_add()` returns the new row IDs,
-#'   `grist_records_update()` and `grist_records_delete()` return `doc`, all
+#'   the row ID. `grist_records_add()` returns the new row IDs.
+#'   `grist_records_update()`, `grist_records_upsert()` and
+#'   `grist_records_delete()` return `doc`. All but `grist_records()` return
 #'   invisibly.
 #' @family records
 #' @examplesIf FALSE
@@ -63,6 +76,10 @@
 #' ids <- grist_records_add(doc, "Pets", new)
 #'
 #' grist_records_update(doc, "Pets", data.frame(id = ids, popularity = 1L))
+#'
+#' # Match on a column instead of the row ID: update cats, add rabbits
+#' pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
+#' grist_records_upsert(doc, "Pets", pets, by = "pet")
 #' grist_records_delete(doc, "Pets", ids)
 #' @export
 grist_records <- function(
@@ -171,6 +188,101 @@ grist_records_update <- function(
       grist_perform()
   }
   invisible(doc)
+}
+
+#' @rdname grist_records
+#' @export
+grist_records_upsert <- function(
+  doc,
+  table,
+  data,
+  by,
+  mode = c("upsert", "update", "insert"),
+  onmany = c("first", "all", "none"),
+  convert = c("auto", "basic", "raw"),
+  options = NULL
+) {
+  doc <- grist_doc(doc)
+  check_string(table)
+  check_data_frame(data)
+  check_required(by)
+  mode <- arg_match(mode)
+  onmany <- arg_match(onmany)
+  convert <- arg_match(convert)
+  options <- as_write_options(options)
+  check_upsert_by(data, by)
+
+  data <- prepare_write_data(doc, table, data, convert, options)
+  records <- df_to_records(data, with_id = FALSE, convert = convert) |>
+    map(function(rec) {
+      list(
+        require = rec$fields[by],
+        fields = rec$fields[setdiff(names(rec$fields), by)]
+      )
+    })
+
+  for (chunk in chunk_rows(length(records), options@chunk_size)) {
+    grist_request(doc, "tables", table, "records") |>
+      httr2::req_method("PUT") |>
+      httr2::req_url_query(
+        onmany = if (onmany != "first") onmany,
+        noadd = if (mode == "update") "true",
+        noupdate = if (mode == "insert") "true"
+      ) |>
+      req_json_body(list(records = records[chunk])) |>
+      grist_perform()
+  }
+  invisible(doc)
+}
+
+check_upsert_by <- function(data, by, call = caller_env()) {
+  if (!is.character(by) || length(by) == 0 || anyNA(by) || anyDuplicated(by)) {
+    cli::cli_abort(
+      "{.arg by} must be a character vector of column names, not {.obj_type_friendly {by}}.",
+      call = call
+    )
+  }
+  if ("id" %in% names(data)) {
+    cli::cli_abort(
+      c(
+        "{.arg data} can't have an {.field id} column when upserting.",
+        i = "Use {.fn grist_records_update} to change rows by ID."
+      ),
+      call = call
+    )
+  }
+  missing <- setdiff(by, names(data))
+  if (length(missing) > 0) {
+    cli::cli_abort(
+      c(
+        "Every column in {.arg by} must be in {.arg data}.",
+        x = "Missing from {.arg data}: {.field {missing}}."
+      ),
+      call = call
+    )
+  }
+
+  keys <- data[by]
+  if (anyNA(keys)) {
+    cli::cli_abort(
+      c(
+        "{.arg by} columns can't have missing values.",
+        x = "Rows with missing keys: {which(!stats::complete.cases(keys))}."
+      ),
+      call = call
+    )
+  }
+  dups <- which(duplicated(keys) | duplicated(keys, fromLast = TRUE))
+  if (length(dups) > 0) {
+    cli::cli_abort(
+      c(
+        "{.arg by} must identify each row of {.arg data} uniquely.",
+        x = "Rows with duplicated keys: {dups}."
+      ),
+      call = call
+    )
+  }
+  invisible()
 }
 
 #' @rdname grist_records

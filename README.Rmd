@@ -89,7 +89,7 @@ and every function takes and returns data frames.
 | `add_records()`  | `grist_records_add()`                          |
 | `update_records()` | `grist_records_update()`                     |
 | `delete_records()` | `grist_records_delete()`                     |
-| `sync_table()`   | no equivalent yet (no upsert)                  |
+| `sync_table()`   | `grist_records_upsert()` (`key_cols` is `by`)  |
 
 Other differences:
 

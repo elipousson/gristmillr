@@ -5,8 +5,8 @@
 * `grist_tables()`, `grist_table_create()`, `grist_columns()`,
   `grist_columns_add()` and `grist_columns_modify()` read and change a
   document's schema.
-* `grist_records()`, `grist_records_add()`, `grist_records_update()` and
-  `grist_records_delete()` read and write records with a `convert` enum
+* `grist_records()`, `grist_records_add()`, `grist_records_update()`,
+  `grist_records_upsert()` and `grist_records_delete()` read and write records with a `convert` enum
   (`"auto"`, `"basic"` or `"raw"`). `grist_sql()` and `grist_count()` run SQL
   queries.
 * `grist_doc_create()`, `grist_doc_info()`, `grist_doc_update()`,
@@ -36,3 +36,5 @@
 * `grist_doc_info()` returns `created_at` and `updated_at`. `grist_orgs()` now
   returns its timestamps as `POSIXct` in UTC rather than strings.
 * `vignette("gristmillr")` is a getting-started guide.
+* `grist_records_upsert()` updates and adds records by matching on key columns
+  (`by`), with `mode` and `onmany` enums. It never deletes records.

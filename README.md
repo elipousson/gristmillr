@@ -64,16 +64,16 @@ around an R6 object. gristmillr has no stateful objects: the document
 handle holds only an ID, a server and request settings, and every
 function takes and returns data frames.
 
-| gristapi           | gristmillr                    |
-|--------------------|-------------------------------|
-| `listtables()`     | `grist_tables()`              |
-| `listcolumns()`    | `grist_columns()`             |
-| `fetch_table()`    | `grist_records()`             |
-| `countrows()`      | `grist_count()`               |
-| `add_records()`    | `grist_records_add()`         |
-| `update_records()` | `grist_records_update()`      |
-| `delete_records()` | `grist_records_delete()`      |
-| `sync_table()`     | no equivalent yet (no upsert) |
+| gristapi           | gristmillr                                    |
+|--------------------|-----------------------------------------------|
+| `listtables()`     | `grist_tables()`                              |
+| `listcolumns()`    | `grist_columns()`                             |
+| `fetch_table()`    | `grist_records()`                             |
+| `countrows()`      | `grist_count()`                               |
+| `add_records()`    | `grist_records_add()`                         |
+| `update_records()` | `grist_records_update()`                      |
+| `delete_records()` | `grist_records_delete()`                      |
+| `sync_table()`     | `grist_records_upsert()` (`key_cols` is `by`) |
 
 Other differences:
 

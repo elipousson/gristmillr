@@ -123,6 +123,16 @@ grist_records_update(doc, "People", data.frame(id = ids[[1]], age = 32L))
 grist_records_delete(doc, "People", ids)
 ```
 
+To match on a column rather than the row `id`, use `grist_records_upsert()`.
+It updates records whose `by` values match and adds the rest, and never
+deletes anything. `mode = "update"` or `"insert"` limits it to one of the two,
+and `onmany` says what to do if several records match one row.
+
+```{r}
+latest <- data.frame(name = c("Ann", "Cy"), age = c(32L, 28L))
+grist_records_upsert(doc, "People", latest, by = "name")
+```
+
 Large writes are sent in chunks. With `convert = "auto"`, a column that doesn't
 exist in the table is an error, so typos surface before anything is sent.
 

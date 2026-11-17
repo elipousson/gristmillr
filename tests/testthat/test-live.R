@@ -104,3 +104,77 @@ test_that("HTTP errors carry Grist's message", {
   doc <- local_scratch_doc()
   expect_error(grist_records(doc, "Missing"), class = "gristmillr_http_error")
 })
+
+test_that("grist_records_upsert() updates, adds and skips by key", {
+  skip_if_no_grist()
+  doc <- local_scratch_doc()
+  grist_table_create(
+    doc,
+    "People",
+    c(email = "Text", age = "Int", joined = "Date")
+  )
+  grist_records_add(
+    doc,
+    "People",
+    data.frame(
+      email = c("a@x", "b@x"),
+      age = c(1L, 2L),
+      joined = as.Date(c("2020-01-01", "2020-02-01"))
+    )
+  )
+
+  grist_records_upsert(
+    doc,
+    "People",
+    data.frame(email = c("b@x", "c@x"), age = c(20L, 30L)),
+    by = "email"
+  )
+  out <- grist_records(doc, "People")
+  expect_equal(out$email, c("a@x", "b@x", "c@x"))
+  expect_equal(out$age, c(1L, 20L, 30L))
+  expect_equal(out$joined[[2]], as.Date("2020-02-01"))
+
+  # A Date key matches the stored value.
+  grist_records_upsert(
+    doc,
+    "People",
+    data.frame(joined = as.Date("2020-01-01"), age = 11L),
+    by = "joined"
+  )
+  expect_equal(grist_records(doc, "People")$age, c(11L, 20L, 30L))
+
+  grist_records_upsert(
+    doc,
+    "People",
+    data.frame(email = c("a@x", "d@x"), age = c(99L, 99L)),
+    by = "email",
+    mode = "update"
+  )
+  out <- grist_records(doc, "People")
+  expect_equal(out$email, c("a@x", "b@x", "c@x"))
+  expect_equal(out$age, c(99L, 20L, 30L))
+
+  grist_records_upsert(
+    doc,
+    "People",
+    data.frame(email = c("a@x", "e@x"), age = c(0L, 5L)),
+    by = "email",
+    mode = "insert"
+  )
+  out <- grist_records(doc, "People")
+  expect_equal(out$email, c("a@x", "b@x", "c@x", "e@x"))
+  expect_equal(out$age, c(99L, 20L, 30L, 5L))
+
+  grist_records_add(doc, "People", data.frame(email = "b@x", age = 21L))
+  grist_records_upsert(
+    doc,
+    "People",
+    data.frame(email = "b@x", age = 7L),
+    by = "email",
+    onmany = "all"
+  )
+  expect_equal(
+    grist_records(doc, "People", filter = list(email = "b@x"))$age,
+    c(7L, 7L)
+  )
+})

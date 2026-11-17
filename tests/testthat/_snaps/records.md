@@ -92,3 +92,55 @@
       Error in `grist_records_delete()`:
       ! `ids` must have an id column.
 
+# grist_records_upsert() validates by and data
+
+    Code
+      grist_records_upsert(test_doc(), "T", data)
+    Condition
+      Error in `grist_records_upsert()`:
+      ! `by` is absent but must be supplied.
+
+---
+
+    Code
+      grist_records_upsert(test_doc(), "T", data, by = 1)
+    Condition
+      Error in `grist_records_upsert()`:
+      ! `by` must be a character vector of column names, not a number.
+
+---
+
+    Code
+      grist_records_upsert(test_doc(), "T", data, by = "x")
+    Condition
+      Error in `grist_records_upsert()`:
+      ! Every column in `by` must be in `data`.
+      x Missing from `data`: x.
+
+---
+
+    Code
+      grist_records_upsert(test_doc(), "T", data, by = "name")
+    Condition
+      Error in `grist_records_upsert()`:
+      ! `by` columns can't have missing values.
+      x Rows with missing keys: 3.
+
+---
+
+    Code
+      grist_records_upsert(test_doc(), "T", data[c(1, 2), ], by = "name")
+    Condition
+      Error in `grist_records_upsert()`:
+      ! `by` must identify each row of `data` uniquely.
+      x Rows with duplicated keys: 1 and 2.
+
+---
+
+    Code
+      grist_records_upsert(test_doc(), "T", data.frame(id = 1L, a = 1), by = "a")
+    Condition
+      Error in `grist_records_upsert()`:
+      ! `data` can't have an id column when upserting.
+      i Use `grist_records_update()` to change rows by ID.
+

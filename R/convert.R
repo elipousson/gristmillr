@@ -27,6 +27,10 @@ is_scalar_atomic <- function(x) {
 # "basic" conversion --------------------------------------------------------
 
 simplify_column <- function(cells) {
+  # `list_unchop()` returns NULL for no cells, which would drop the column.
+  if (length(cells) == 0) {
+    return(logical())
+  }
   if (any(map_lgl(cells, is.list))) {
     return(map(cells, simplify_list_cell))
   }

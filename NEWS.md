@@ -38,3 +38,5 @@
 * `vignette("gristmillr")` is a getting-started guide.
 * `grist_records_upsert()` updates and adds records by matching on key columns
   (`by`), with `mode` and `onmany` enums. It never deletes records.
+* `grist_records()` no longer fails on an empty table with untyped (`Any`)
+  columns.

@@ -372,3 +372,21 @@ test_that("grist_records_upsert() splits large writes into chunks", {
   )
   expect_length(mock$reqs, 3)
 })
+
+test_that("grist_records() keeps untyped columns of an empty table", {
+  local_grist_env()
+  local_grist_mock(
+    json_resp(
+      '{"columns":[{"id":"A","fields":{"type":"Any"}},{"id":"B","fields":{"type":"Text"}}]}'
+    ),
+    json_resp('{"records":[]}'),
+    json_resp('{"records":[]}')
+  )
+
+  out <- grist_records(test_doc(), "T")
+  expect_named(out, c("id", "A", "B"))
+  expect_equal(nrow(out), 0)
+
+  out <- grist_records(test_doc(), "T", convert = "basic")
+  expect_equal(nrow(out), 0)
+})

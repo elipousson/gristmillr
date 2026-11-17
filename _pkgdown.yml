@@ -1,0 +1,27 @@
+url: ~
+template:
+  bootstrap: 5
+
+reference:
+  - title: Documents
+    desc: Create handles for documents and manage them.
+    contents:
+      - grist_doc
+      - grist_doc_create
+      - grist_request
+      - grist_doc_download
+  - title: Records
+    contents:
+      - grist_records
+      - grist_sql
+      - grist_resolve_refs
+  - title: Schema
+    contents:
+      - grist_tables
+      - grist_columns
+  - title: Orgs and workspaces
+    contents:
+      - grist_orgs
+  - title: Options
+    contents:
+      - grist-options

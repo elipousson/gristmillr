@@ -1,7 +1,7 @@
 Package: gristmillr
 Title: Work with the 'Grist' Spreadsheet API
 Version: 0.0.0.9000
-Authors@R: 
+Authors@R:
     person("Eli", "Pousson", , "eli.pousson@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8280-1706"))
 Description: Read and write data in 'Grist' <https://www.getgrist.com/>
@@ -12,9 +12,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)
-Depends: 
+Depends:
     R (>= 4.2.0)
-Imports: 
+Imports:
     cli,
     curl,
     httr2 (>= 1.1.0),
@@ -22,7 +22,7 @@ Imports:
     rlang (>= 1.1.0),
     S7,
     vctrs
-Suggests: 
+Suggests:
     dplyr,
     knitr,
     rmarkdown,
@@ -34,7 +34,7 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1.9000
-Collate: 
+Collate:
     'attachments.R'
     'columns.R'
     'confirm.R'
@@ -58,3 +58,6 @@ Collate:
     'tables.R'
     'webhooks.R'
     'workspaces.R'
+URL: https://github.com/elipousson/gristmillr,
+    https://elipousson.github.io/gristmillr/
+BugReports: https://github.com/elipousson/gristmillr/issues

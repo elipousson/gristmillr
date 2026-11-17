@@ -341,3 +341,9 @@ map_lgl <- function(.x, .f, ...) {
 map_int <- function(.x, .f, ...) {
   vapply(.x, .f, integer(1), ...)
 }
+
+# Parse the ISO 8601 UTC timestamps Grist returns for documents, orgs and
+# snapshots into POSIXct. Missing values stay NA.
+as_grist_time <- function(x) {
+  as.POSIXct(x, format = "%Y-%m-%dT%H:%M:%OSZ", tz = "UTC")
+}

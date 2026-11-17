@@ -1,4 +1,4 @@
-info_json <- '{"id":"abc123","name":"Pets","access":"owners","isPinned":true,"urlId":null,"workspace":{"id":12,"name":"Home","org":{"domain":"docs"}}}'
+info_json <- '{"id":"abc123","name":"Pets","access":"owners","isPinned":true,"urlId":null,"createdAt":"2020-01-01T00:00:00.000Z","updatedAt":"2021-02-03T04:05:06.789Z","workspace":{"id":12,"name":"Home","org":{"domain":"docs"}}}'
 
 test_that("grist_doc_create() returns a handle for the new document", {
   local_grist_env()
@@ -35,6 +35,22 @@ test_that("grist_doc_info() returns one row", {
   expect_equal(out$workspace_id, 12L)
   expect_equal(out$org_domain, "docs")
   expect_true(is.na(out$url_id))
+  expect_s3_class(out$created_at, "POSIXct")
+  expect_equal(format(out$created_at, "%Y-%m-%d"), "2020-01-01")
+  expect_equal(
+    format(out$updated_at, "%Y-%m-%d %H:%M:%S"),
+    "2021-02-03 04:05:06"
+  )
+})
+
+test_that("grist_doc_info() tolerates missing timestamps", {
+  local_grist_env()
+  local_grist_mock(json_resp(
+    '{"id":"abc123","name":"Pets","workspace":{"id":1,"name":"H","org":{"domain":"docs"}}}'
+  ))
+  out <- grist_doc_info(test_doc())
+  expect_s3_class(out$created_at, "POSIXct")
+  expect_true(is.na(out$created_at))
 })
 
 test_that("grist_doc_update() patches name and pinned", {

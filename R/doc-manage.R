@@ -27,7 +27,8 @@
 #'   errors otherwise. `TRUE` skips the prompt. `FALSE` always errors.
 #' @returns `grist_doc_create()` returns a [grist_doc()]. `grist_doc_info()`
 #'   returns a one-row data frame with `id`, `name`, `access`, `is_pinned`,
-#'   `url_id`, `workspace_id`, `workspace_name` and `org_domain`. The others
+#'   `url_id`, `created_at` and `updated_at` (`POSIXct`, in UTC),
+#'   `workspace_id`, `workspace_name` and `org_domain`. The others
 #'   return a [grist_doc()] invisibly.
 #' @family docs
 #' @examplesIf FALSE
@@ -70,6 +71,8 @@ grist_doc_info <- function(doc) {
       access = body$access %||% NA_character_,
       is_pinned = body$isPinned %||% NA,
       url_id = body$urlId %||% NA_character_,
+      created_at = as_grist_time(body$createdAt %||% NA_character_),
+      updated_at = as_grist_time(body$updatedAt %||% NA_character_),
       workspace_id = as.integer(body$workspace$id %||% NA_integer_),
       workspace_name = body$workspace$name %||% NA_character_,
       org_domain = body$workspace$org$domain %||% NA_character_

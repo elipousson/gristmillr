@@ -17,6 +17,8 @@ test_that("grist_orgs() lists orgs", {
 
   expect_equal(out$id, 1L)
   expect_equal(out$domain, "docs")
+  expect_s3_class(out$created_at, "POSIXct")
+  expect_equal(format(out$updated_at, "%Y-%m-%d"), "2020-01-02")
   expect_equal(mock$reqs[[1]]$url, "https://x.getgrist.com/api/orgs")
 })
 

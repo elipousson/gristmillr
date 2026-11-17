@@ -91,10 +91,8 @@ grist_snapshots <- function(doc, raw = FALSE) {
         NA_character_,
         top = TRUE
       ),
-      last_modified = as.POSIXct(
-        field_vec(snapshots, "lastModified", NA_character_, top = TRUE),
-        format = "%Y-%m-%dT%H:%M:%OSZ",
-        tz = "UTC"
+      last_modified = as_grist_time(
+        field_vec(snapshots, "lastModified", NA_character_, top = TRUE)
       ),
       doc_id = field_vec(snapshots, "docId", NA_character_, top = TRUE)
     ),

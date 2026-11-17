@@ -40,8 +40,12 @@ grist_orgs <- function(server = NULL, options = NULL) {
       name = field_vec(orgs, "name", NA_character_, top = TRUE),
       domain = field_vec(orgs, "domain", NA_character_, top = TRUE),
       access = field_vec(orgs, "access", NA_character_, top = TRUE),
-      created_at = field_vec(orgs, "createdAt", NA_character_, top = TRUE),
-      updated_at = field_vec(orgs, "updatedAt", NA_character_, top = TRUE)
+      created_at = as_grist_time(
+        field_vec(orgs, "createdAt", NA_character_, top = TRUE)
+      ),
+      updated_at = as_grist_time(
+        field_vec(orgs, "updatedAt", NA_character_, top = TRUE)
+      )
     ),
     n = length(orgs)
   )

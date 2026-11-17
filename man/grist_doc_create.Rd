@@ -57,7 +57,8 @@ errors otherwise. \code{TRUE} skips the prompt. \code{FALSE} always errors.}
 \value{
 \code{grist_doc_create()} returns a \code{\link[=grist_doc]{grist_doc()}}. \code{grist_doc_info()}
 returns a one-row data frame with \code{id}, \code{name}, \code{access}, \code{is_pinned},
-\code{url_id}, \code{workspace_id}, \code{workspace_name} and \code{org_domain}. The others
+\code{url_id}, \code{created_at} and \code{updated_at} (\code{POSIXct}, in UTC),
+\code{workspace_id}, \code{workspace_name} and \code{org_domain}. The others
 return a \code{\link[=grist_doc]{grist_doc()}} invisibly.
 }
 \description{

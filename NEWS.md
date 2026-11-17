@@ -33,3 +33,6 @@
 * `grist_doc()` and `grist_request_options()` gain an `api_key` argument, a
   string or a function returning one. String keys are held in session memory
   and never serialised with the object.
+* `grist_doc_info()` returns `created_at` and `updated_at`. `grist_orgs()` now
+  returns its timestamps as `POSIXct` in UTC rather than strings.
+* `vignette("gristmillr")` is a getting-started guide.

@@ -5,3 +5,4 @@
 ^docs$
 ^pkgdown$
 ^air\.toml$
+^README\.Rmd$

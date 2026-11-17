@@ -1,0 +1,106 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Edit README.Rmd, then knit it
+against a Grist server, e.g.
+GRIST_API_KEY=... GRIST_SERVER=... Rscript -e 'rmarkdown::render("README.Rmd")'
+The output is pre-computed because it needs a live Grist server. -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.path = "man/figures/README-")
+```
+
+# gristmillr
+
+gristmillr is an [httr2](https://httr2.r-lib.org/)-based client for the
+[Grist](https://www.getgrist.com/) REST API. Functions take a lightweight
+document handle first and return data frames, so they compose with pipes.
+
+This is a development version; see `NEWS.md`.
+
+## Setup
+
+Set your API key (and, for a team or self-hosted site, the server) in
+`.Renviron`:
+
+```
+GRIST_API_KEY=<your key>
+GRIST_SERVER=https://myteam.getgrist.com
+```
+
+Or pass the key to `grist_doc(api_key = )`, as a string or as a function such
+as `\() keyring::key_get("grist")`. Keys given as strings are never saved with
+the object.
+
+## Usage
+
+```{r, eval = FALSE}
+library(gristmillr)
+
+doc <- grist_doc("<doc id or URL>")
+```
+
+```{r, include = FALSE}
+# The output below is computed against a scratch document that is deleted when
+# the README is knitted.
+devtools::load_all(quiet = TRUE)
+workspace <- grist_workspaces()$id[[1]]
+doc <- grist_doc_create(workspace, "gristmillr README")
+grist_table_create(doc, "People", c(name = "Text", age = "Int", status = "Choice"))
+grist_records_add(
+  doc,
+  "People",
+  data.frame(
+    name = c("Ann", "Bob", "Cy"),
+    age = c(31L, 45L, 28L),
+    status = c("active", "pending", "active")
+  )
+)
+```
+
+```{r}
+grist_tables(doc)
+
+doc |>
+  grist_records("People", filter = list(status = "active"), sort = "-age")
+
+doc |>
+  grist_records_add("People", data.frame(name = "Dee", age = 52L, status = "active"))
+
+grist_sql(doc, "SELECT status, COUNT(*) AS n FROM People GROUP BY status")
+```
+
+See `vignette("gristmillr")` to get started and `vignette("joining-tables")`
+for working with reference columns.
+
+## Coming from gristapi
+
+The [gristapi](https://github.com/spyrales/gristapi) package is built around an R6 object. gristmillr has no stateful
+objects: the document handle holds only an ID, a server and request settings,
+and every function takes and returns data frames.
+
+| gristapi         | gristmillr                                     |
+|------------------|------------------------------------------------|
+| `listtables()`   | `grist_tables()`                               |
+| `listcolumns()`  | `grist_columns()`                              |
+| `fetch_table()`  | `grist_records()`                              |
+| `countrows()`    | `grist_count()`                                |
+| `add_records()`  | `grist_records_add()`                          |
+| `update_records()` | `grist_records_update()`                     |
+| `delete_records()` | `grist_records_delete()`                     |
+| `sync_table()`   | no equivalent yet (no upsert)                  |
+
+Other differences:
+
+* Cell types are converted from column metadata by default, with
+  `convert = "basic"` and `"raw"` as alternatives.
+* Settings that rarely change live in `grist_request_options()`,
+  `grist_read_options()` and `grist_write_options()`.
+* gristmillr also covers documents and workspaces, schema changes, SQL,
+  downloads, attachments, webhooks and document history.
+* It does not depend on dplyr, tidyr or sf.
+
+```{r, include = FALSE}
+grist_doc_delete(doc, mode = "permanent", confirm = TRUE)
+```

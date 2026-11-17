@@ -34,6 +34,7 @@ Collate:
     'doc-manage.R'
     'options.R'
     'doc.R'
+    'download.R'
     'gristmillr-package.R'
     'import-standalone-obj-type.R'
     'import-standalone-types-check.R'

@@ -37,6 +37,7 @@ withr::with_envvar(
 \seealso{
 Other docs:
 \code{\link[=grist_doc]{grist_doc()}},
-\code{\link[=grist_doc_create]{grist_doc_create()}}
+\code{\link[=grist_doc_create]{grist_doc_create()}},
+\code{\link[=grist_doc_download]{grist_doc_download()}}
 }
 \concept{docs}

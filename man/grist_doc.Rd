@@ -43,6 +43,7 @@ grist_doc("https://docs.getgrist.com/doc/am2iHJ9Amvo7Ve3EE5emtu")
 \seealso{
 Other docs:
 \code{\link[=grist_doc_create]{grist_doc_create()}},
+\code{\link[=grist_doc_download]{grist_doc_download()}},
 \code{\link[=grist_request]{grist_request()}}
 }
 \concept{docs}

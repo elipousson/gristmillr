@@ -14,3 +14,5 @@
   documents, and `grist_orgs()`, `grist_workspaces()`, `grist_docs()` and
   `grist_workspace_*()` list and manage orgs and workspaces. Deleting takes
   `mode = "trash"` or `"permanent"` and asks for confirmation.
+* `grist_doc_download()` saves a document or table as `.grist`, Excel, CSV,
+  TSV or DSV, and `grist_table_schema()` returns a table's Table Schema.

@@ -17,6 +17,10 @@ GRIST_API_KEY=<your key>
 GRIST_SERVER=https://myteam.getgrist.com
 ```
 
+Or pass the key to `grist_doc(api_key = )`, as a string or as a function such
+as `\() keyring::key_get("grist")`. Keys given as strings are never saved with
+the object.
+
 ## Usage
 
 ```r

@@ -13,8 +13,22 @@ NULL
 #'   grist_records("People")
 #' ```
 #'
-#' The handle never stores your API key. Requests read it from the
-#' `GRIST_API_KEY` environment variable.
+#' @section Authentication:
+#' Requests are authenticated with a Grist API key, found in this order:
+#'
+#' 1. The `api_key` argument of `grist_doc()` or [grist_request_options()],
+#'    either a string or a function with no arguments that returns one.
+#' 2. The `GRIST_API_KEY` environment variable.
+#'
+#' A key supplied as a string is held in memory for the current session only,
+#' not stored in the object, so saving a handle with `saveRDS()` (or as a
+#' [targets](https://docs.ropensci.org/targets/) target) never writes the key
+#' to disk. A handle read back in a new session errors until you supply the key
+#' again. To make a handle that works across sessions, pass a function such as
+#' `api_key = \() keyring::key_get("grist")` or `\() Sys.getenv("MY_KEY")`.
+#' To keep a key encrypted on disk yourself, see [httr2::secret_write_rds()].
+#'
+#' Avoid typing keys into scripts you share or commit.
 #'
 #' @param doc A document ID, the URL of a document, or an existing
 #'   `grist_doc` object.
@@ -23,6 +37,8 @@ NULL
 #'   team path if needed, e.g. `"http://localhost:8484/o/docs"`. Defaults to the
 #'   server in `doc` if `doc` is a URL, then the `GRIST_SERVER` environment
 #'   variable, then `"https://docs.getgrist.com"`.
+#' @param api_key A Grist API key, as a string or a function that returns one.
+#'   Overrides any key in `options`. See the Authentication section.
 #' @param options A [grist_request_options()] object. If `NULL`, the default
 #'   from `getOption("gristmillr.request_options")` or
 #'   [grist_request_options()] is used.
@@ -40,18 +56,27 @@ grist_doc <- new_class(
     server = class_character,
     options = grist_request_options
   ),
-  constructor = function(doc, server = NULL, options = NULL) {
+  constructor = function(doc, server = NULL, options = NULL, api_key = NULL) {
     if (S7::S7_inherits(doc, grist_doc)) {
       return(doc)
     }
     check_string(doc)
     parsed <- parse_doc(doc)
     server <- server %||% parsed$server %||% default_server()
+    options <- as_request_options(options)
+    if (!is.null(api_key)) {
+      options <- grist_request_options(
+        timeout = options@timeout,
+        max_tries = options@max_tries,
+        user_agent = options@user_agent,
+        api_key = api_key
+      )
+    }
     new_object(
       S7_object(),
       doc_id = parsed$doc_id,
       server = normalize_server(server),
-      options = as_request_options(options)
+      options = options
     )
   },
   validator = function(self) {

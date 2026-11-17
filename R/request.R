@@ -33,26 +33,78 @@ grist_request <- function(doc, ...) {
 req_grist <- function(server, path, options, call = caller_env()) {
   httr2::request(paste0(server, "/api")) |>
     httr2::req_url_path_append(paste(path, collapse = "/")) |>
-    httr2::req_auth_bearer_token(grist_api_key(call)) |>
+    httr2::req_auth_bearer_token(grist_api_key(options, call)) |>
     httr2::req_user_agent(options@user_agent) |>
     httr2::req_timeout(options@timeout) |>
     httr2::req_retry(max_tries = options@max_tries) |>
     httr2::req_error(body = grist_error_body)
 }
 
-grist_api_key <- function(call = caller_env()) {
-  key <- Sys.getenv("GRIST_API_KEY", unset = "")
-  if (!nzchar(key)) {
+# API keys supplied as strings are kept in this session-only registry rather
+# than on the options object, so serialising an object (`saveRDS()`, targets)
+# never writes the key to disk.
+key_registry <- new_environment()
+
+store_api_key <- function(api_key, call = caller_env()) {
+  if (is.null(api_key) || is.function(api_key)) {
+    return(api_key)
+  }
+  if (inherits(api_key, "gristmillr_key_ref")) {
+    return(api_key)
+  }
+  if (!is_string(api_key)) {
+    cli::cli_abort(
+      "{.arg api_key} must be a string or a function that returns one, not {.obj_type_friendly {api_key}}.",
+      call = call
+    )
+  }
+  id <- basename(tempfile("key"))
+  env_poke(key_registry, id, api_key)
+  structure(id, class = "gristmillr_key_ref")
+}
+
+grist_api_key <- function(options, call = caller_env()) {
+  key <- options@api_key
+
+  if (is.function(key)) {
+    value <- key()
+    if (!is_string(value)) {
+      cli::cli_abort(
+        "The {.arg api_key} function must return a single string, not {.obj_type_friendly {value}}.",
+        class = "gristmillr_no_api_key",
+        call = call
+      )
+    }
+    return(value)
+  }
+
+  if (inherits(key, "gristmillr_key_ref")) {
+    value <- env_get(key_registry, unclass(key), default = NULL)
+    if (is.null(value)) {
+      cli::cli_abort(
+        c(
+          "The API key for this object is not available in this session.",
+          i = "API keys are never saved with an object. Supply {.arg api_key} again, or use a function that looks it up."
+        ),
+        class = "gristmillr_no_api_key",
+        call = call
+      )
+    }
+    return(value)
+  }
+
+  value <- Sys.getenv("GRIST_API_KEY", unset = "")
+  if (!nzchar(value)) {
     cli::cli_abort(
       c(
         "Can't find a Grist API key.",
-        i = "Set the {.envvar GRIST_API_KEY} environment variable, e.g. in your {.file .Renviron}."
+        i = "Supply {.arg api_key}, or set the {.envvar GRIST_API_KEY} environment variable, e.g. in your {.file .Renviron}."
       ),
       class = "gristmillr_no_api_key",
       call = call
     )
   }
-  key
+  value
 }
 
 grist_error_body <- function(resp) {

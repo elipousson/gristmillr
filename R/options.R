@@ -13,6 +13,10 @@
 #'   transient error (HTTP 429 or 503).
 #' @param user_agent User agent string sent with each request. Defaults to
 #'   a string identifying gristmillr.
+#' @param api_key A Grist API key: a string, or a function with no arguments
+#'   that returns one (e.g. `\() keyring::key_get("grist")`). If `NULL`, the
+#'   `GRIST_API_KEY` environment variable is used. See the Authentication
+#'   section of [grist_doc()].
 #' @param hidden If `TRUE`, include hidden columns such as `manualSort`.
 #' @param cell_format Format of cell values returned by Grist. `"normal"` uses
 #'   compact values whose meaning depends on the column type. `"typed"` returns
@@ -40,14 +44,21 @@ grist_request_options <- new_class(
   properties = list(
     timeout = class_numeric,
     max_tries = class_numeric,
-    user_agent = class_character
+    user_agent = class_character,
+    api_key = class_any
   ),
-  constructor = function(timeout = 30, max_tries = 3, user_agent = NULL) {
+  constructor = function(
+    timeout = 30,
+    max_tries = 3,
+    user_agent = NULL,
+    api_key = NULL
+  ) {
     new_object(
       S7_object(),
       timeout = timeout,
       max_tries = max_tries,
-      user_agent = user_agent %||% default_user_agent()
+      user_agent = user_agent %||% default_user_agent(),
+      api_key = store_api_key(api_key)
     )
   },
   validator = function(self) {
@@ -60,9 +71,34 @@ grist_request_options <- new_class(
     if (!is_string(self@user_agent)) {
       return("@user_agent must be a single string.")
     }
+    if (
+      !is.null(self@api_key) &&
+        !is.function(self@api_key) &&
+        !inherits(self@api_key, "gristmillr_key_ref")
+    ) {
+      return("@api_key must be `NULL`, a string or a function.")
+    }
     NULL
   }
 )
+
+method(print, grist_request_options) <- function(x, ...) {
+  key <- if (is.null(x@api_key)) {
+    "{.envvar GRIST_API_KEY}"
+  } else if (is.function(x@api_key)) {
+    "<function>"
+  } else {
+    "<REDACTED>"
+  }
+  cli::cli_text("{.cls grist_request_options}")
+  cli::cli_bullets(c(
+    " " = "timeout: {x@timeout}",
+    " " = "max_tries: {x@max_tries}",
+    " " = "user_agent: {x@user_agent}",
+    " " = paste0("api_key: ", key)
+  ))
+  invisible(x)
+}
 
 #' @rdname grist-options
 #' @export

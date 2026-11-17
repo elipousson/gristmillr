@@ -30,3 +30,6 @@
 * `grist_snapshot_restore()`, `grist_snapshots_remove()` and
   `grist_doc_history_truncate()` restore a snapshot and remove snapshots or old
   history, after confirmation.
+* `grist_doc()` and `grist_request_options()` gain an `api_key` argument, a
+  string or a function returning one. String keys are held in session memory
+  and never serialised with the object.

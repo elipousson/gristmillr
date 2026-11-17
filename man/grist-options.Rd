@@ -7,7 +7,12 @@
 \alias{grist_write_options}
 \title{Options for Grist requests, reads and writes}
 \usage{
-grist_request_options(timeout = 30, max_tries = 3, user_agent = NULL)
+grist_request_options(
+  timeout = 30,
+  max_tries = 3,
+  user_agent = NULL,
+  api_key = NULL
+)
 
 grist_read_options(
   hidden = FALSE,
@@ -26,6 +31,11 @@ transient error (HTTP 429 or 503).}
 
 \item{user_agent}{User agent string sent with each request. Defaults to
 a string identifying gristmillr.}
+
+\item{api_key}{A Grist API key: a string, or a function with no arguments
+that returns one (e.g. \verb{\\() keyring::key_get("grist")}). If \code{NULL}, the
+\code{GRIST_API_KEY} environment variable is used. See the Authentication
+section of \code{\link[=grist_doc]{grist_doc()}}.}
 
 \item{hidden}{If \code{TRUE}, include hidden columns such as \code{manualSort}.}
 

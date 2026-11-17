@@ -4,7 +4,7 @@
 \alias{grist_doc}
 \title{Create a handle for a Grist document}
 \usage{
-grist_doc(doc, server = NULL, options = NULL)
+grist_doc(doc, server = NULL, options = NULL, api_key = NULL)
 }
 \arguments{
 \item{doc}{A document ID, the URL of a document, or an existing
@@ -19,6 +19,9 @@ variable, then \code{"https://docs.getgrist.com"}.}
 \item{options}{A \code{\link[=grist_request_options]{grist_request_options()}} object. If \code{NULL}, the default
 from \code{getOption("gristmillr.request_options")} or
 \code{\link[=grist_request_options]{grist_request_options()}} is used.}
+
+\item{api_key}{A Grist API key, as a string or a function that returns one.
+Overrides any key in \code{options}. See the Authentication section.}
 }
 \value{
 A \code{grist_doc} object with properties \code{doc_id}, \code{server} and
@@ -32,10 +35,27 @@ most gristmillr functions so it works in pipelines:
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{grist_doc("<doc id>") |>
   grist_records("People")
 }\if{html}{\out{</div>}}
-
-The handle never stores your API key. Requests read it from the
-\code{GRIST_API_KEY} environment variable.
 }
+\section{Authentication}{
+
+Requests are authenticated with a Grist API key, found in this order:
+\enumerate{
+\item The \code{api_key} argument of \code{grist_doc()} or \code{\link[=grist_request_options]{grist_request_options()}},
+either a string or a function with no arguments that returns one.
+\item The \code{GRIST_API_KEY} environment variable.
+}
+
+A key supplied as a string is held in memory for the current session only,
+not stored in the object, so saving a handle with \code{saveRDS()} (or as a
+\href{https://docs.ropensci.org/targets/}{targets} target) never writes the key
+to disk. A handle read back in a new session errors until you supply the key
+again. To make a handle that works across sessions, pass a function such as
+\verb{api_key = \\() keyring::key_get("grist")} or \verb{\\() Sys.getenv("MY_KEY")}.
+To keep a key encrypted on disk yourself, see \code{\link[httr2:secret_write_rds]{httr2::secret_write_rds()}}.
+
+Avoid typing keys into scripts you share or commit.
+}
+
 \examples{
 grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
 grist_doc("https://docs.getgrist.com/doc/am2iHJ9Amvo7Ve3EE5emtu")

@@ -72,7 +72,9 @@
 #'   leave the reference `"empty"`.
 #' @param if_exists What to do when a table already exists in the document:
 #'   stop with an `"error"` before changing anything, or `"append"` rows to
-#'   it. Existing tables keep their columns and types.
+#'   it. Existing tables keep their columns and types. A document made with
+#'   [grist_doc_create()] already has an empty `Table1`, which counts as an
+#'   existing table if the data you import also has a `Table1`.
 #' @param options A [grist_write_options()] object.
 #' @returns A data frame with one row per imported table: `table`, `rows` and
 #'   `columns`, invisibly. If a request fails part way, tables and rows

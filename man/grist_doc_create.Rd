@@ -64,8 +64,9 @@ return a \code{\link[=grist_doc]{grist_doc()}} invisibly.
 }
 \description{
 \itemize{
-\item \code{grist_doc_create()} creates an empty document in a workspace and returns
-a \code{\link[=grist_doc]{grist_doc()}} handle.
+\item \code{grist_doc_create()} creates a new document in a workspace and returns
+a \code{\link[=grist_doc]{grist_doc()}} handle. Grist starts every new document with an empty
+table named \code{Table1}.
 \item \code{grist_doc_info()} describes a document.
 \item \code{grist_doc_update()} renames a document or pins and unpins it.
 \item \code{grist_doc_move()} moves a document to another workspace.

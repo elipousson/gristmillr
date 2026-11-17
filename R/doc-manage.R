@@ -1,8 +1,9 @@
 #' Create, describe, update, move and delete documents
 #'
 #' @description
-#' * `grist_doc_create()` creates an empty document in a workspace and returns
-#'   a [grist_doc()] handle.
+#' * `grist_doc_create()` creates a new document in a workspace and returns
+#'   a [grist_doc()] handle. Grist starts every new document with an empty
+#'   table named `Table1`.
 #' * `grist_doc_info()` describes a document.
 #' * `grist_doc_update()` renames a document or pins and unpins it.
 #' * `grist_doc_move()` moves a document to another workspace.

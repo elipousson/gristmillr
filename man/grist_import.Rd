@@ -42,7 +42,9 @@ leave the reference \code{"empty"}.}
 
 \item{if_exists}{What to do when a table already exists in the document:
 stop with an \code{"error"} before changing anything, or \code{"append"} rows to
-it. Existing tables keep their columns and types.}
+it. Existing tables keep their columns and types. A document made with
+\code{\link[=grist_doc_create]{grist_doc_create()}} already has an empty \code{Table1}, which counts as an
+existing table if the data you import also has a \code{Table1}.}
 
 \item{options}{A \code{\link[=grist_write_options]{grist_write_options()}} object.}
 }

@@ -19,7 +19,8 @@ grist_export(
 
 \item{to}{Directory to write to. It is created if it doesn't exist.}
 
-\item{tables}{Table IDs to export. \code{NULL} exports every table.}
+\item{tables}{Table IDs to export. \code{NULL} exports every table, including the
+empty \code{Table1} that Grist puts in new documents.}
 
 \item{format}{File format for the tables: \code{"parquet"}, \code{"csv"} or \code{"json"}.}
 

@@ -37,7 +37,8 @@
 #'
 #' @inheritParams grist_records
 #' @param to Directory to write to. It is created if it doesn't exist.
-#' @param tables Table IDs to export. `NULL` exports every table.
+#' @param tables Table IDs to export. `NULL` exports every table, including the
+#'   empty `Table1` that Grist puts in new documents.
 #' @param format File format for the tables: `"parquet"`, `"csv"` or `"json"`.
 #' @param examples data-dict describes the values of each column. `"sample"`
 #'   records up to five real example values (or the range of dates) from the

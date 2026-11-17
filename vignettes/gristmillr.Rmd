@@ -1,0 +1,181 @@
+---
+title: "Getting started with gristmillr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with gristmillr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+gristmillr reads and writes [Grist](https://www.getgrist.com/) documents
+through the REST API. Functions take a document handle first, take and return
+data frames, and work in pipelines. The examples need a Grist account, so
+they are not run here.
+
+## Authenticate
+
+gristmillr needs an API key, which you can create in Grist under *Profile
+settings*. The simplest setup is two environment variables in your
+`.Renviron` (see `usethis::edit_r_environ()`):
+
+```
+GRIST_API_KEY=<your key>
+GRIST_SERVER=https://myteam.getgrist.com
+```
+
+`GRIST_SERVER` defaults to `https://docs.getgrist.com`. For a self-hosted
+site, include the team path if needed, e.g. `http://localhost:8484/o/docs`.
+
+You can also pass the key directly, as a string or as a function that looks it
+up each time (handy with a keyring):
+
+```{r}
+library(gristmillr)
+
+doc <- grist_doc("<doc id>", api_key = \() keyring::key_get("grist"))
+```
+
+A key given as a string is held in memory for the session and is never saved
+with the object, so saving a handle with `saveRDS()` or in a targets pipeline
+doesn't write your key to disk. Use the function form for handles you persist.
+
+## Find a document
+
+`grist_doc()` accepts a document ID or the URL of a document, and the handle
+remembers the server:
+
+```{r}
+doc <- grist_doc("https://myteam.getgrist.com/doc/<doc id>")
+doc
+```
+
+If you don't know the ID, list what you can see:
+
+```{r}
+grist_orgs()
+grist_workspaces("current")
+grist_docs("current")
+
+grist_doc_info(doc)
+```
+
+You can also create documents with `grist_doc_create()`, which returns a
+handle.
+
+## Read data
+
+```{r}
+grist_tables(doc)
+grist_columns(doc, "People")
+
+grist_records(doc, "People")
+```
+
+Filter and sort on the server, and limit the number of rows:
+
+```{r}
+doc |>
+  grist_records(
+    "People",
+    filter = list(status = c("active", "pending")),
+    sort = "-age",
+    limit = 100
+  )
+```
+
+For anything more involved, run SQL (`SELECT` only):
+
+```{r}
+grist_sql(doc, "SELECT status, COUNT(*) AS n FROM People GROUP BY status")
+grist_count(doc, "People")
+```
+
+### Column types
+
+The `convert` argument controls how Grist cell values become R vectors:
+
+* `"auto"` (the default) reads the table's column types, so `Int` becomes
+  integer, `Date` becomes `Date`, `DateTime` becomes `POSIXct`, and
+  `ChoiceList` and `RefList` become list-columns. It costs one extra request
+  per call.
+* `"basic"` simplifies the JSON without looking up column types. Dates stay as
+  numbers (seconds since 1970).
+* `"raw"` returns the API's values unchanged.
+
+`Ref` columns hold the row `id` of a record in another table. See
+`vignette("joining-tables")` for resolving and joining them.
+
+## Write data
+
+Writes take a data frame and are converted the same way:
+
+```{r}
+new <- data.frame(name = c("Ann", "Bob"), age = c(31L, 45L))
+ids <- grist_records_add(doc, "People", new)
+
+# Returns the new row IDs. Updates need an `id` column
+grist_records_update(doc, "People", data.frame(id = ids[[1]], age = 32L))
+
+grist_records_delete(doc, "People", ids)
+```
+
+Large writes are sent in chunks. With `convert = "auto"`, a column that doesn't
+exist in the table is an error, so typos surface before anything is sent.
+
+## Change the schema
+
+```{r}
+grist_table_create(doc, "Pets", c(name = "Text", age = "Int"))
+
+grist_columns_add(doc, "Pets", c(owner = "Ref:People", adopted = "Date"))
+grist_columns_modify(doc, "Pets", data.frame(id = "age", description = "In years"))
+```
+
+## Settings
+
+Rarely changed settings live in small option objects, so function signatures
+stay short:
+
+```{r}
+doc <- grist_doc("<doc id>", options = grist_request_options(timeout = 60))
+
+grist_records(doc, "People", options = grist_read_options(col_names = "label"))
+grist_records_add(doc, "People", new, options = grist_write_options(chunk_size = 100))
+```
+
+Set defaults for a whole session with
+`options(gristmillr.request_options = ..., gristmillr.read_options = ...,
+gristmillr.write_options = ...)`.
+
+## Deleting safely
+
+Functions that delete things, such as `grist_doc_delete()` and
+`grist_workspace_delete()`, take `mode = "trash"` (the default, recoverable) or
+`"permanent"`. In an interactive session they ask for confirmation. In a
+script they refuse to run unless you pass `confirm = TRUE`.
+
+```{r}
+doc |> grist_doc_delete()
+doc |> grist_doc_restore()
+```
+
+## Other features
+
+* Download documents or tables with `grist_doc_download()`.
+* Manage attachments with `grist_attachments*()` and webhooks with
+  `grist_webhook*()`.
+* Review changes with `grist_doc_history()`, `grist_snapshots()` and
+  `grist_doc_compare()`.
+
+For an endpoint gristmillr doesn't wrap, `grist_request()` returns an
+authenticated httr2 request:
+
+```{r}
+grist_request(doc, "tables") |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+```

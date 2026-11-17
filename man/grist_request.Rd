@@ -38,6 +38,7 @@ withr::with_envvar(
 Other docs:
 \code{\link[=grist_doc]{grist_doc()}},
 \code{\link[=grist_doc_create]{grist_doc_create()}},
-\code{\link[=grist_doc_download]{grist_doc_download()}}
+\code{\link[=grist_doc_download]{grist_doc_download()}},
+\code{\link[=grist_doc_import]{grist_doc_import()}}
 }
 \concept{docs}

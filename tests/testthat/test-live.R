@@ -178,3 +178,27 @@ test_that("grist_records_upsert() updates, adds and skips by key", {
     c(7L, 7L)
   )
 })
+
+test_that("grist_doc_import() creates documents from files", {
+  skip_if_no_grist()
+  workspace <- grist_workspaces()$id[[1]]
+  dir <- withr::local_tempdir()
+
+  csv <- file.path(dir, "pets.csv")
+  writeLines(c("name,age,adopted", "Rex,3,2020-01-02", "Tom,5,2021-05-06"), csv)
+  doc <- grist_doc_import(csv, workspace, name = "gristmillr import test")
+  withr::defer(grist_doc_delete(doc, mode = "permanent", confirm = TRUE))
+
+  expect_s3_class(doc, "gristmillr::grist_doc")
+  expect_equal(grist_doc_info(doc)$name, "gristmillr import test")
+  expect_equal(grist_tables(doc)$id, "Pets")
+  out <- grist_records(doc, "Pets")
+  expect_equal(out$name, c("Rex", "Tom"))
+  expect_equal(out$adopted, as.Date(c("2020-01-02", "2021-05-06")))
+
+  json <- file.path(dir, "things.json")
+  writeLines('[{"a":1,"b":"x"},{"a":2,"b":"y"}]', json)
+  doc2 <- grist_doc_import(json, workspace)
+  withr::defer(grist_doc_delete(doc2, mode = "permanent", confirm = TRUE))
+  expect_equal(grist_records(doc2, "Things")$b, c("x", "y"))
+})

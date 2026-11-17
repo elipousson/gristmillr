@@ -23,3 +23,20 @@
       Error in `grist_doc_delete()`:
       ! `confirm` must be `TRUE`, `FALSE` or `NULL`, not a string.
 
+# grist_doc_import() validates its arguments
+
+    Code
+      grist_doc_import("missing.csv", workspace = 1)
+    Condition
+      Error in `grist_doc_import()`:
+      ! `path` must be an existing file.
+      x Not an existing file: 'missing.csv'.
+
+---
+
+    Code
+      grist_doc_import("a.csv", workspace = "x")
+    Condition
+      Error in `grist_doc_import()`:
+      ! `workspace` must be a whole number, not the string "x".
+

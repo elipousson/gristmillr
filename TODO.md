@@ -30,9 +30,6 @@ descriptions, history, export and import.
 
 ## Features not built
 
-- [ ] `grist_doc_import(path, workspace, name)`: upload a `.grist`, `.xlsx`,
-  `.csv` or `.json` file as a new document. All four formats worked when probed
-  through `POST /docs` and `POST /workspaces/{id}/import`.
 - [ ] A DBI target for `grist_export()`, for DuckDB, SQLite or Postgres files
   (list columns as JSON).
 - [ ] `grist_import()` from a named list of data frames, without a dictionary

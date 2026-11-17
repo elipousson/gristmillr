@@ -94,6 +94,7 @@ doc |> grist_doc_restore()
 Other docs:
 \code{\link[=grist_doc]{grist_doc()}},
 \code{\link[=grist_doc_download]{grist_doc_download()}},
+\code{\link[=grist_doc_import]{grist_doc_import()}},
 \code{\link[=grist_request]{grist_request()}}
 }
 \concept{docs}

@@ -48,3 +48,5 @@
   packages.
 * `vignette("migrating-data")` explains how to move tables in and out of Grist
   with `grist_export()` and `grist_import()`.
+* `grist_doc_import()` creates a document from a `.grist`, `.csv`, `.xlsx` or
+  `.json` file.

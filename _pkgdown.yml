@@ -8,6 +8,7 @@ reference:
     contents:
       - grist_doc
       - grist_doc_create
+      - grist_doc_import
       - grist_request
       - grist_doc_download
   - title: Records

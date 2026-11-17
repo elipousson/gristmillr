@@ -40,6 +40,7 @@ Collate:
     'confirm.R'
     'convert.R'
     'data-dict.R'
+    'doc-import.R'
     'doc-manage.R'
     'options.R'
     'doc.R'

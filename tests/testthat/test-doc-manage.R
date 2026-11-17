@@ -170,3 +170,42 @@ test_that("grist_doc_restore() posts to unremove", {
   expect_match(mock$reqs[[1]]$url, "/docs/abc123/unremove$")
   expect_equal(httr2::req_get_method(mock$reqs[[1]]), "POST")
 })
+
+test_that("grist_doc_import() uploads the file and returns a handle", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp('{"title":"pets","id":"newdoc123"}'))
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("a,b", "1,2"), path)
+
+  doc <- grist_doc_import(path, workspace = 12, name = "Pets")
+
+  expect_s3_class(doc, "gristmillr::grist_doc")
+  expect_equal(doc@doc_id, "newdoc123")
+  expect_equal(
+    mock$reqs[[1]]$url,
+    "https://docs.getgrist.com/api/workspaces/12/import"
+  )
+  expect_equal(mock$reqs[[1]]$body$type, "multipart")
+  expect_named(mock$reqs[[1]]$body$data, c("upload", "documentName"))
+})
+
+test_that("grist_doc_import() omits the name when it isn't given", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp('{"title":"pets","id":"newdoc123"}'))
+  path <- withr::local_tempfile(fileext = ".csv")
+  writeLines(c("a,b", "1,2"), path)
+
+  grist_doc_import(path, workspace = 12)
+
+  expect_named(mock$reqs[[1]]$body$data, "upload")
+})
+
+test_that("grist_doc_import() validates its arguments", {
+  local_grist_env()
+  expect_snapshot(grist_doc_import("missing.csv", workspace = 1), error = TRUE)
+  expect_error(
+    grist_doc_import(tempdir(), workspace = 1),
+    "must be an existing file"
+  )
+  expect_snapshot(grist_doc_import("a.csv", workspace = "x"), error = TRUE)
+})

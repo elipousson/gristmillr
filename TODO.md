@@ -7,11 +7,9 @@ descriptions, history, export and import.
 
 ## Before publishing
 
-- [ ] Add `URL` and `BugReports` to `DESCRIPTION` after moving the package to
-  GitHub, then set the pkgdown site URL, run `pkgdown::check_pkgdown()` and
-  deploy the site.
+- [x] `URL` and `BugReports` are set and `pkgdown::check_pkgdown()` passes.
 - [ ] Rotate the Grist API key that was pasted into the development session.
-- [ ] Run `jarl check .` and `ry check`, which haven't been run.
+- [ ] Run `ry check`. It isn't installed here. `jarl check .` passes.
 - [ ] If submitting to CRAN, do a pass with the `r-cran-extrachecks` skill.
 - [ ] Choose which Grist-dependent examples run on a hosted site, if any.
 

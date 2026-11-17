@@ -9,9 +9,9 @@ Description: Read and write data in 'Grist' <https://www.getgrist.com/>
     take and return data frames, and use plain handle objects instead of
     stateful classes so they work well in tidyverse-style pipelines.
 License: MIT + file LICENSE
-Encoding: UTF-8
-Language: en-US
-Roxygen: list(markdown = TRUE)
+URL: https://github.com/elipousson/gristmillr,
+    https://elipousson.github.io/gristmillr/
+BugReports: https://github.com/elipousson/gristmillr/issues
 Depends:
     R (>= 4.2.0)
 Imports:
@@ -25,15 +25,19 @@ Imports:
 Suggests:
     dplyr,
     knitr,
+    nanoparquet,
     rmarkdown,
     testthat (>= 3.0.0),
-    nanoparquet,
     tibble,
     withr,
     yaml12
-VignetteBuilder: knitr
-Config/testthat/edition: 3
+VignetteBuilder: 
+    knitr
 Config/roxygen2/version: 8.1.1.9000
+Config/testthat/edition: 3
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
 Collate:
     'attachments.R'
     'columns.R'
@@ -58,6 +62,3 @@ Collate:
     'tables.R'
     'webhooks.R'
     'workspaces.R'
-URL: https://github.com/elipousson/gristmillr,
-    https://elipousson.github.io/gristmillr/
-BugReports: https://github.com/elipousson/gristmillr/issues

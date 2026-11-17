@@ -22,9 +22,13 @@ Imports:
     S7,
     vctrs
 Suggests: 
+    dplyr,
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0),
     tibble,
     withr
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1.9000
 Collate: 
@@ -39,6 +43,7 @@ Collate:
     'import-standalone-obj-type.R'
     'import-standalone-types-check.R'
     'records.R'
+    'refs.R'
     'request.R'
     'sql.R'
     'tables.R'

@@ -45,6 +45,7 @@ grist_count(doc, "Pets")
 }
 \seealso{
 Other records:
-\code{\link[=grist_records]{grist_records()}}
+\code{\link[=grist_records]{grist_records()}},
+\code{\link[=grist_resolve_refs]{grist_resolve_refs()}}
 }
 \concept{records}

@@ -16,3 +16,5 @@
   `mode = "trash"` or `"permanent"` and asks for confirmation.
 * `grist_doc_download()` saves a document or table as `.grist`, Excel, CSV,
   TSV or DSV, and `grist_table_schema()` returns a table's Table Schema.
+* `grist_resolve_refs()` looks up display values for `Ref` and `RefList`
+  columns, and `vignette("joining-tables")` shows how to join tables.

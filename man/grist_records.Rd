@@ -120,6 +120,7 @@ grist_records_delete(doc, "Pets", ids)
 }
 \seealso{
 Other records:
+\code{\link[=grist_resolve_refs]{grist_resolve_refs()}},
 \code{\link[=grist_sql]{grist_sql()}}
 }
 \concept{records}

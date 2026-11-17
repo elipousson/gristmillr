@@ -1,0 +1,95 @@
+---
+title: "Joining tables"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Joining tables}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+Grist links tables with *reference* columns. A `Ref` column stores the row
+`id` of a record in another table, and a `RefList` column stores several.
+gristmillr returns these as integer row IDs, so there are three ways to bring
+the related data together.
+
+The examples use two tables: `People` (with a `name` column) and `Orders`
+(with `item`, `qty` and a `person` column of type `Ref:People`).
+
+```{r}
+library(gristmillr)
+
+doc <- grist_doc("<your document ID>")
+```
+
+## Look up display values
+
+The Grist interface shows a reference as the value of a *display column*, such
+as a person's name. `grist_resolve_refs()` looks those values up for data you
+have already read:
+
+```{r}
+orders <- grist_records(doc, "Orders")
+
+grist_resolve_refs(orders, doc, "Orders")
+#>   id item person person_display qty
+#> 1  1  pen      1           Ann   1
+#> 2  2  ink      1           Ann   2
+#> 3  3  pad      2           Bob   3
+#> 4  4  cap     NA          <NA>   4
+```
+
+The original IDs are kept, so you can still join on them. Use
+`how = "replace"` to swap the IDs for the display values, and `columns` to
+choose which references to resolve. `RefList` columns become list-columns of
+display values. If a reference has no display column in Grist, only the row IDs
+exist, and the function warns and leaves the column alone.
+
+## Join in R
+
+When you need other columns from the related table, read both tables and join
+on the reference. A `Ref` column matches the `id` column of the table it points
+to, and an empty reference is `NA`.
+
+```{r}
+people <- grist_records(doc, "People")
+
+merge(orders, people, by.x = "person", by.y = "id", all.x = TRUE,
+      suffixes = c("", "_person"))
+
+# With dplyr:
+dplyr::left_join(orders, people, by = c(person = "id"), suffix = c("", "_person"))
+```
+
+For a `RefList` column, unnest it first, for example with
+`tidyr::unnest_longer()`, and then join.
+
+## Join in Grist with SQL
+
+Grist documents are SQLite databases, so `grist_sql()` can join on the server
+and return only the result. Use table IDs and column IDs as names. This is the
+better choice for large tables or aggregates.
+
+```{r}
+grist_sql(
+  doc,
+  "select o.item, o.qty, p.name
+   from Orders o
+   left join People p on o.person = p.id
+   order by o.id"
+)
+
+grist_sql(
+  doc,
+  "select p.name, sum(o.qty) as total
+   from People p
+   left join Orders o on o.person = p.id
+   group by p.id"
+)
+```
+
+SQL results carry no column types, so dates come back as numbers. Convert them
+yourself, or use `grist_records()` when types matter.

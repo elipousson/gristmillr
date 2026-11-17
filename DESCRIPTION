@@ -1,0 +1,29 @@
+Package: gristmillr
+Title: Work with the 'Grist' Spreadsheet API
+Version: 0.0.0.9000
+Authors@R: 
+    person("Eli", "Pousson", , "eli.pousson@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-8280-1706"))
+Description: Read and write data in 'Grist' <https://www.getgrist.com/>
+    documents using the 'Grist' REST API. Functions are built on 'httr2',
+    take and return data frames, and use plain handle objects instead of
+    stateful classes so they work well in tidyverse-style pipelines.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
+Depends: 
+    R (>= 4.2.0)
+Imports: 
+    cli,
+    httr2 (>= 1.1.0),
+    jsonlite,
+    rlang (>= 1.1.0),
+    S7,
+    vctrs
+Suggests: 
+    testthat (>= 3.0.0),
+    tibble,
+    withr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1.9000

@@ -80,7 +80,7 @@ test_that("grist_doc_delete() trashes by default when confirmed", {
   mock <- local_grist_mock(json_resp(""))
   doc <- test_doc()
 
-  expect_identical(grist_doc_delete(doc, confirm = TRUE), doc)
+  expect_identical(grist_doc_delete(doc, ask = FALSE), doc)
 
   expect_length(mock$reqs, 1)
   expect_equal(httr2::req_get_method(mock$reqs[[1]]), "POST")
@@ -93,11 +93,11 @@ test_that("grist_doc_delete() trashes by default when confirmed", {
 test_that("grist_doc_delete(mode = 'permanent') sets the permanent flag", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
-  grist_doc_delete(test_doc(), mode = "permanent", confirm = TRUE)
+  grist_doc_delete(test_doc(), mode = "permanent", ask = FALSE)
   expect_match(mock$reqs[[1]]$url, "/remove\\?permanent=true$")
 })
 
-test_that("grist_doc_delete() refuses to run unconfirmed in scripts", {
+test_that("grist_doc_delete() refuses to run without ask = FALSE in scripts", {
   local_grist_env()
   local_interactive(FALSE)
   mock <- local_grist_mock(json_resp(""))
@@ -105,18 +105,18 @@ test_that("grist_doc_delete() refuses to run unconfirmed in scripts", {
   expect_snapshot(grist_doc_delete(test_doc()), error = TRUE)
   expect_error(
     grist_doc_delete(test_doc()),
-    class = "gristmillr_confirm_required"
+    class = "gristmillr_ask_required"
   )
   expect_error(
-    grist_doc_delete(test_doc(), confirm = FALSE),
-    class = "gristmillr_confirm_required"
+    grist_doc_delete(test_doc(), ask = TRUE),
+    class = "gristmillr_ask_required"
   )
   expect_length(mock$reqs, 0)
 })
 
-test_that("grist_doc_delete() validates confirm", {
+test_that("grist_doc_delete() validates ask", {
   local_grist_env()
-  expect_snapshot(grist_doc_delete(test_doc(), confirm = "yes"), error = TRUE)
+  expect_snapshot(grist_doc_delete(test_doc(), ask = "yes"), error = TRUE)
 })
 
 test_that("grist_doc_delete() prompts interactively before trashing", {

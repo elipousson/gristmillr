@@ -17,7 +17,7 @@ local_scratch_doc <- function(.env = parent.frame()) {
   doc <- grist_doc_create(workspace, "gristmillr-test-scratch")
   withr::defer(
     try(
-      grist_doc_delete(doc, mode = "permanent", confirm = TRUE),
+      grist_doc_delete(doc, mode = "permanent", ask = FALSE),
       silent = TRUE
     ),
     envir = .env

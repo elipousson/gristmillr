@@ -6,22 +6,22 @@
       Error in `grist_doc_update()`:
       ! Must supply at least one of `name` and `pinned`.
 
-# grist_doc_delete() refuses to run unconfirmed in scripts
+# grist_doc_delete() refuses to run without ask = FALSE in scripts
 
     Code
       grist_doc_delete(test_doc())
     Condition
       Error in `grist_doc_delete()`:
-      ! Must confirm before deleting a document.
-      i Use `confirm = TRUE` to delete without a prompt.
+      ! Can't ask before deleting a document in a non-interactive session.
+      i Use `ask = FALSE` to delete without a prompt.
 
-# grist_doc_delete() validates confirm
+# grist_doc_delete() validates ask
 
     Code
-      grist_doc_delete(test_doc(), confirm = "yes")
+      grist_doc_delete(test_doc(), ask = "yes")
     Condition
       Error in `grist_doc_delete()`:
-      ! `confirm` must be `TRUE`, `FALSE` or `NULL`, not a string.
+      ! `ask` must be `TRUE`, `FALSE` or `NULL`, not a string.
 
 # grist_doc_import() validates its arguments
 

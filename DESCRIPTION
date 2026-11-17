@@ -39,9 +39,9 @@ Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)
 Collate:
+    'ask.R'
     'attachments.R'
     'columns.R'
-    'confirm.R'
     'convert.R'
     'data-dict.R'
     'doc-import.R'

@@ -9,7 +9,7 @@ test_that("document lifecycle works against a live server", {
   expect_equal(info$name, "gristmillr-test-renamed")
   expect_true(info$is_pinned)
 
-  grist_doc_delete(doc, confirm = TRUE)
+  grist_doc_delete(doc, ask = FALSE)
   grist_doc_restore(doc)
   expect_equal(grist_doc_info(doc)$id, doc@doc_id)
 })
@@ -187,7 +187,7 @@ test_that("grist_doc_import() creates documents from files", {
   csv <- file.path(dir, "pets.csv")
   writeLines(c("name,age,adopted", "Rex,3,2020-01-02", "Tom,5,2021-05-06"), csv)
   doc <- grist_doc_import(csv, workspace, name = "gristmillr import test")
-  withr::defer(grist_doc_delete(doc, mode = "permanent", confirm = TRUE))
+  withr::defer(grist_doc_delete(doc, mode = "permanent", ask = FALSE))
 
   expect_s3_class(doc, "gristmillr::grist_doc")
   expect_equal(grist_doc_info(doc)$name, "gristmillr import test")
@@ -199,6 +199,6 @@ test_that("grist_doc_import() creates documents from files", {
   json <- file.path(dir, "things.json")
   writeLines('[{"a":1,"b":"x"},{"a":2,"b":"y"}]', json)
   doc2 <- grist_doc_import(json, workspace)
-  withr::defer(grist_doc_delete(doc2, mode = "permanent", confirm = TRUE))
+  withr::defer(grist_doc_delete(doc2, mode = "permanent", ask = FALSE))
   expect_equal(grist_records(doc2, "Things")$b, c("x", "y"))
 })

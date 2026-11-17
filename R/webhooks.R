@@ -14,7 +14,7 @@
 #'
 #' @section Deleting:
 #' `grist_webhook_delete()` asks for confirmation in an interactive session
-#' and refuses to run in a script unless `confirm = TRUE`, like
+#' and refuses to run in a script unless `ask = FALSE`, like
 #' [grist_doc_delete()].
 #'
 #' @inheritParams grist_records
@@ -31,8 +31,9 @@
 #' @param is_ready_column Optional ID of a boolean column. When set, an event
 #'   is only sent once the column is `TRUE`. For `grist_webhook_update()`, `NA`
 #'   clears it.
-#' @param confirm `NULL` (the default) prompts in an interactive session and
-#'   errors otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+#' @param ask Whether to prompt before running. `NULL` (the default) and
+#'   `TRUE` prompt in an interactive session and error in a script. `FALSE`
+#'   skips the prompt.
 #' @returns `grist_webhooks()` returns a data frame with one row per webhook:
 #'   `id`, `name`, `memo`, `url`, `enabled`, `table`, `event_types` (a
 #'   list-column), `is_ready_column`, and delivery columns `num_waiting`,
@@ -153,12 +154,12 @@ grist_webhook_update <- function(
 
 #' @rdname grist_webhooks
 #' @export
-grist_webhook_delete <- function(doc, id, confirm = NULL) {
+grist_webhook_delete <- function(doc, id, ask = NULL) {
   doc <- grist_doc(doc)
   check_string(id)
 
   error_call <- current_env()
-  confirm_delete(
+  check_ask(
     "webhook",
     function() {
       webhooks <- grist_webhooks(doc)
@@ -176,7 +177,7 @@ grist_webhook_delete <- function(doc, id, confirm = NULL) {
       }
     },
     "delete",
-    confirm
+    ask
   )
 
   grist_request(doc, "webhooks", id) |>

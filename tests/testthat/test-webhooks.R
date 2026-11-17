@@ -115,18 +115,18 @@ test_that("grist_webhook_update() needs something to change", {
   expect_snapshot(grist_webhook_update(test_doc(), "w1"), error = TRUE)
 })
 
-test_that("grist_webhook_delete() follows the confirmation rules", {
+test_that("grist_webhook_delete() follows the ask rules", {
   local_grist_env()
   mock <- local_grist_mock(json_resp('{"success":true}'))
 
-  grist_webhook_delete(test_doc(), "w1", confirm = TRUE)
+  grist_webhook_delete(test_doc(), "w1", ask = FALSE)
   expect_equal(httr2::req_get_method(mock$reqs[[1]]), "DELETE")
   expect_match(mock$reqs[[1]]$url, "/webhooks/w1$")
 
   local_interactive(FALSE)
   expect_error(
     grist_webhook_delete(test_doc(), "w1"),
-    class = "gristmillr_confirm_required"
+    class = "gristmillr_ask_required"
   )
   expect_length(mock$reqs, 1)
 })
@@ -239,6 +239,6 @@ test_that("webhooks work against a live server", {
   expect_equal(hooks$is_ready_column, "ready")
 
   grist_webhook_queue_clear(doc, id)
-  grist_webhook_delete(doc, id, confirm = TRUE)
+  grist_webhook_delete(doc, id, ask = FALSE)
   expect_equal(nrow(grist_webhooks(doc)), 0)
 })

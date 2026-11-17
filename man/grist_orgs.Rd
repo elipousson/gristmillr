@@ -20,7 +20,7 @@ grist_workspace_create(name, org = "current", server = NULL, options = NULL)
 grist_workspace_delete(
   workspace,
   mode = c("trash", "permanent"),
-  confirm = NULL,
+  ask = NULL,
   server = NULL,
   options = NULL
 )
@@ -48,8 +48,9 @@ server URL.}
 \item{mode}{\code{"trash"} moves the document to the trash, where it can be
 restored with \code{grist_doc_restore()}. \code{"permanent"} deletes it for good.}
 
-\item{confirm}{\code{NULL} (the default) prompts in an interactive session and
-errors otherwise. \code{TRUE} skips the prompt. \code{FALSE} always errors.}
+\item{ask}{Whether to prompt before running. \code{NULL} (the default) and
+\code{TRUE} prompt in an interactive session and error in a script. \code{FALSE}
+skips the prompt.}
 }
 \value{
 A data frame for the listing functions. \code{grist_workspace_create()}
@@ -75,7 +76,7 @@ grist_orgs()
 grist_workspaces()
 grist_docs()
 id <- grist_workspace_create(name = "Pets")
-grist_workspace_delete(id, confirm = TRUE)
+grist_workspace_delete(id, ask = FALSE)
 \dontshow{\}) # examplesIf}
 }
 \concept{workspaces}

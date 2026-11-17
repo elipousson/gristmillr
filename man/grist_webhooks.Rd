@@ -33,7 +33,7 @@ grist_webhook_update(
   is_ready_column = NULL
 )
 
-grist_webhook_delete(doc, id, confirm = NULL)
+grist_webhook_delete(doc, id, ask = NULL)
 
 grist_webhook_queue_clear(doc, id = NULL)
 }
@@ -62,8 +62,9 @@ clears it.}
 \code{grist_webhooks()}. For \code{grist_webhook_queue_clear()}, \code{NULL} clears the
 queues of all webhooks in the document.}
 
-\item{confirm}{\code{NULL} (the default) prompts in an interactive session and
-errors otherwise. \code{TRUE} skips the prompt. \code{FALSE} always errors.}
+\item{ask}{Whether to prompt before running. \code{NULL} (the default) and
+\code{TRUE} prompt in an interactive session and error in a script. \code{FALSE}
+skips the prompt.}
 }
 \value{
 \code{grist_webhooks()} returns a data frame with one row per webhook:
@@ -91,7 +92,7 @@ because an endpoint was unreachable.
 \section{Deleting}{
 
 \code{grist_webhook_delete()} asks for confirmation in an interactive session
-and refuses to run in a script unless \code{confirm = TRUE}, like
+and refuses to run in a script unless \code{ask = FALSE}, like
 \code{\link[=grist_doc_delete]{grist_doc_delete()}}.
 }
 

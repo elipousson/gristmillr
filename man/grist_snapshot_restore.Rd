@@ -6,11 +6,11 @@
 \alias{grist_doc_history_truncate}
 \title{Restore or remove document history}
 \usage{
-grist_snapshot_restore(doc, snapshot_id, confirm = NULL)
+grist_snapshot_restore(doc, snapshot_id, ask = NULL)
 
-grist_snapshots_remove(doc, snapshot_ids, confirm = NULL)
+grist_snapshots_remove(doc, snapshot_ids, ask = NULL)
 
-grist_doc_history_truncate(doc, keep, confirm = NULL)
+grist_doc_history_truncate(doc, keep, ask = NULL)
 }
 \arguments{
 \item{doc}{A \code{grist_doc} object, document ID or document URL. See
@@ -19,8 +19,9 @@ grist_doc_history_truncate(doc, keep, confirm = NULL)
 \item{snapshot_id, snapshot_ids}{Snapshot ID(s), as listed in the
 \code{snapshot_id} column of \code{\link[=grist_snapshots]{grist_snapshots()}}.}
 
-\item{confirm}{\code{NULL} (the default) prompts in an interactive session and
-errors otherwise. \code{TRUE} skips the prompt. \code{FALSE} always errors.}
+\item{ask}{Whether to prompt before running. \code{NULL} (the default) and
+\code{TRUE} prompt in an interactive session and error in a script. \code{FALSE}
+skips the prompt.}
 
 \item{keep}{Number of the most recent actions to keep.}
 }
@@ -39,7 +40,7 @@ in the document's action history.
 }
 
 In an interactive session they prompt with a yes/no question. In a script
-they refuse to run unless \code{confirm = TRUE}.
+they refuse to run unless \code{ask = FALSE}.
 }
 \examples{
 \dontshow{if (FALSE) withAutoprint(\{ # examplesIf}

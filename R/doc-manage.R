@@ -14,7 +14,7 @@
 #' `grist_doc_delete()` asks for confirmation. In an interactive session it
 #' prompts: a yes/no question for `mode = "trash"`, and typing the document
 #' name for `mode = "permanent"`. In a script, it refuses to delete unless
-#' `confirm = TRUE`.
+#' `ask = FALSE`.
 #'
 #' @inheritParams grist_doc
 #' @param workspace A workspace ID, as listed by [grist_workspaces()].
@@ -23,8 +23,9 @@
 #'   `NULL` leaves the setting unchanged.
 #' @param mode `"trash"` moves the document to the trash, where it can be
 #'   restored with `grist_doc_restore()`. `"permanent"` deletes it for good.
-#' @param confirm `NULL` (the default) prompts in an interactive session and
-#'   errors otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+#' @param ask Whether to prompt before running. `NULL` (the default) and
+#'   `TRUE` prompt in an interactive session and error in a script. `FALSE`
+#'   skips the prompt.
 #' @returns `grist_doc_create()` returns a [grist_doc()]. `grist_doc_info()`
 #'   returns a one-row data frame with `id`, `name`, `access`, `is_pinned`,
 #'   `url_id`, `created_at` and `updated_at` (`POSIXct`, in UTC),
@@ -116,15 +117,15 @@ grist_doc_move <- function(doc, workspace) {
 grist_doc_delete <- function(
   doc,
   mode = c("trash", "permanent"),
-  confirm = NULL
+  ask = NULL
 ) {
   doc <- grist_doc(doc)
   mode <- arg_match(mode)
-  confirm_delete(
+  check_ask(
     "document",
     function() grist_doc_info(doc)$name,
     mode,
-    confirm
+    ask
   )
 
   req <- grist_request(doc, "remove") |>

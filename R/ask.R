@@ -1,31 +1,32 @@
-# Confirm a destructive action. Interactive sessions are prompted; scripts
-# must opt in with `confirm = TRUE`. `label` may be a function so that the name
-# is only looked up (one request) when a prompt is needed.
-confirm_delete <- function(
+# Gate a destructive action. `ask = NULL` (the default) and `ask = TRUE` prompt
+# in an interactive session and refuse to run in a script; `ask = FALSE` skips
+# the prompt. `label` may be a function so that the name is only looked up (one
+# request) when a prompt is needed.
+check_ask <- function(
   kind,
   label,
   mode,
-  confirm,
+  ask,
   call = caller_env(),
   verb = "delete"
 ) {
-  if (isTRUE(confirm)) {
+  if (isFALSE(ask)) {
     return(invisible(TRUE))
   }
-  if (!is.null(confirm) && !isFALSE(confirm)) {
+  if (!is.null(ask) && !isTRUE(ask)) {
     cli::cli_abort(
-      "{.arg confirm} must be `TRUE`, `FALSE` or `NULL`, not {.obj_type_friendly {confirm}}.",
+      "{.arg ask} must be `TRUE`, `FALSE` or `NULL`, not {.obj_type_friendly {ask}}.",
       call = call
     )
   }
 
-  if (isFALSE(confirm) || !is_interactive()) {
+  if (!is_interactive()) {
     cli::cli_abort(
       c(
-        "Must confirm before {verb_ing(verb)} a {kind}.",
-        i = "Use {.code confirm = TRUE} to {verb} without a prompt."
+        "Can't ask before {verb_ing(verb)} a {kind} in a non-interactive session.",
+        i = "Use {.code ask = FALSE} to {verb} without a prompt."
       ),
-      class = "gristmillr_confirm_required",
+      class = "gristmillr_ask_required",
       call = call
     )
   }

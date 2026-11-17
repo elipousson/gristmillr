@@ -1,5 +1,11 @@
 # gristmillr 0.0.0.9000
 
+* Functions that delete or overwrite things (`grist_doc_delete()`,
+  `grist_workspace_delete()`, `grist_webhook_delete()`,
+  `grist_snapshot_restore()`, `grist_snapshots_remove()` and
+  `grist_doc_history_truncate()`) take `ask`. `ask = FALSE` skips the prompt;
+  the default prompts when interactive and errors in a script.
+
 * Initial development version with document handles (`grist_doc()`), options
   objects and `grist_request()` for building authenticated requests.
 * `grist_tables()`, `grist_table_create()`, `grist_columns()`,
@@ -13,7 +19,7 @@
   `grist_doc_move()`, `grist_doc_delete()` and `grist_doc_restore()` manage
   documents, and `grist_orgs()`, `grist_workspaces()`, `grist_docs()` and
   `grist_workspace_*()` list and manage orgs and workspaces. Deleting takes
-  `mode = "trash"` or `"permanent"` and asks for confirmation.
+  `mode = "trash"` or `"permanent"` and asks before deleting (`ask = NULL`, the default; `ask = FALSE` skips the prompt).
 * `grist_doc_download()` saves a document or table as `.grist`, Excel, CSV,
   TSV or DSV, and `grist_table_schema()` returns a table's Table Schema.
 * `grist_resolve_refs()` looks up display values for `Ref` and `RefList`

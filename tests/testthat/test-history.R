@@ -147,7 +147,7 @@ test_that("grist_snapshot_restore() posts the snapshot ID", {
   mock <- local_grist_mock(json_resp(""))
   doc <- test_doc()
 
-  expect_identical(grist_snapshot_restore(doc, "s1", confirm = TRUE), doc)
+  expect_identical(grist_snapshot_restore(doc, "s1", ask = FALSE), doc)
 
   expect_match(mock$reqs[[1]]$url, "/docs/abc123/replace$")
   expect_equal(as.character(req_body(mock$reqs[[1]])), '{"snapshotId":"s1"}')
@@ -157,7 +157,7 @@ test_that("grist_snapshots_remove() posts the snapshot IDs", {
   local_grist_env()
   mock <- local_grist_mock(json_resp('{"snapshotIds":["a"]}'))
 
-  grist_snapshots_remove(test_doc(), "a", confirm = TRUE)
+  grist_snapshots_remove(test_doc(), "a", ask = FALSE)
 
   expect_match(mock$reqs[[1]]$url, "/snapshots/remove$")
   expect_equal(
@@ -170,13 +170,13 @@ test_that("grist_doc_history_truncate() posts how many actions to keep", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
 
-  grist_doc_history_truncate(test_doc(), keep = 5, confirm = TRUE)
+  grist_doc_history_truncate(test_doc(), keep = 5, ask = FALSE)
 
   expect_match(mock$reqs[[1]]$url, "/states/remove$")
   expect_equal(as.character(req_body(mock$reqs[[1]])), '{"keep":5}')
 })
 
-test_that("history changes refuse to run unconfirmed in scripts", {
+test_that("history changes refuse to run without ask = FALSE in scripts", {
   local_grist_env()
   local_interactive(FALSE)
   expect_snapshot(grist_snapshot_restore(test_doc(), "s1"), error = TRUE)
@@ -218,7 +218,7 @@ test_that("truncating history works against a live server", {
   grist_records_add(doc, "T", data.frame(x = c("a", "b")))
 
   expect_identical(
-    grist_doc_history_truncate(doc, keep = 2, confirm = TRUE),
+    grist_doc_history_truncate(doc, keep = 2, ask = FALSE),
     doc
   )
   expect_lte(nrow(grist_doc_history(doc)), 3)

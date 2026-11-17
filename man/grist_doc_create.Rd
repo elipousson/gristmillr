@@ -23,7 +23,7 @@ grist_doc_update(doc, name = NULL, pinned = NULL)
 
 grist_doc_move(doc, workspace)
 
-grist_doc_delete(doc, mode = c("trash", "permanent"), confirm = NULL)
+grist_doc_delete(doc, mode = c("trash", "permanent"), ask = NULL)
 
 grist_doc_restore(doc)
 }
@@ -51,8 +51,9 @@ from \code{getOption("gristmillr.request_options")} or
 \item{mode}{\code{"trash"} moves the document to the trash, where it can be
 restored with \code{grist_doc_restore()}. \code{"permanent"} deletes it for good.}
 
-\item{confirm}{\code{NULL} (the default) prompts in an interactive session and
-errors otherwise. \code{TRUE} skips the prompt. \code{FALSE} always errors.}
+\item{ask}{Whether to prompt before running. \code{NULL} (the default) and
+\code{TRUE} prompt in an interactive session and error in a script. \code{FALSE}
+skips the prompt.}
 }
 \value{
 \code{grist_doc_create()} returns a \code{\link[=grist_doc]{grist_doc()}}. \code{grist_doc_info()}
@@ -78,7 +79,7 @@ permanently.
 \code{grist_doc_delete()} asks for confirmation. In an interactive session it
 prompts: a yes/no question for \code{mode = "trash"}, and typing the document
 name for \code{mode = "permanent"}. In a script, it refuses to delete unless
-\code{confirm = TRUE}.
+\code{ask = FALSE}.
 }
 
 \examples{

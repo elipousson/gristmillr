@@ -107,5 +107,5 @@ Other differences:
 * It does not depend on dplyr, tidyr or sf.
 
 ```{r, include = FALSE}
-grist_doc_delete(doc, mode = "permanent", confirm = TRUE)
+grist_doc_delete(doc, mode = "permanent", ask = FALSE)
 ```

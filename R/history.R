@@ -170,14 +170,15 @@ changes_to_df <- function(details) {
 #'   in the document's action history.
 #'
 #' In an interactive session they prompt with a yes/no question. In a script
-#' they refuse to run unless `confirm = TRUE`.
+#' they refuse to run unless `ask = FALSE`.
 #'
 #' @inheritParams grist_doc_compare
 #' @param snapshot_id,snapshot_ids Snapshot ID(s), as listed in the
 #'   `snapshot_id` column of [grist_snapshots()].
 #' @param keep Number of the most recent actions to keep.
-#' @param confirm `NULL` (the default) prompts in an interactive session and
-#'   errors otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+#' @param ask Whether to prompt before running. `NULL` (the default) and
+#'   `TRUE` prompt in an interactive session and error in a script. `FALSE`
+#'   skips the prompt.
 #' @returns The [grist_doc()] handle, invisibly.
 #' @family history
 #' @examplesIf FALSE
@@ -188,14 +189,14 @@ changes_to_df <- function(details) {
 #' grist_snapshots_remove(doc, snapshots$snapshot_id[-1])
 #' grist_doc_history_truncate(doc, keep = 100)
 #' @export
-grist_snapshot_restore <- function(doc, snapshot_id, confirm = NULL) {
+grist_snapshot_restore <- function(doc, snapshot_id, ask = NULL) {
   doc <- grist_doc(doc)
   check_string(snapshot_id)
-  confirm_delete(
+  check_ask(
     "document",
     function() grist_doc_info(doc)$name,
     "replace",
-    confirm,
+    ask,
     verb = "replace"
   )
 
@@ -208,18 +209,18 @@ grist_snapshot_restore <- function(doc, snapshot_id, confirm = NULL) {
 
 #' @rdname grist_snapshot_restore
 #' @export
-grist_snapshots_remove <- function(doc, snapshot_ids, confirm = NULL) {
+grist_snapshots_remove <- function(doc, snapshot_ids, ask = NULL) {
   doc <- grist_doc(doc)
   if (!is.character(snapshot_ids) || length(snapshot_ids) == 0) {
     cli::cli_abort(
       "{.arg snapshot_ids} must be a character vector of snapshot IDs."
     )
   }
-  confirm_delete(
+  check_ask(
     "snapshot",
     function() paste(snapshot_ids, collapse = ", "),
     "delete",
-    confirm
+    ask
   )
 
   grist_request(doc, c("snapshots", "remove")) |>
@@ -231,14 +232,14 @@ grist_snapshots_remove <- function(doc, snapshot_ids, confirm = NULL) {
 
 #' @rdname grist_snapshot_restore
 #' @export
-grist_doc_history_truncate <- function(doc, keep, confirm = NULL) {
+grist_doc_history_truncate <- function(doc, keep, ask = NULL) {
   doc <- grist_doc(doc)
   check_number_whole(keep, min = 0)
-  confirm_delete(
+  check_ask(
     "history",
     function() grist_doc_info(doc)$name,
     "delete",
-    confirm,
+    ask,
     verb = "truncate"
   )
 

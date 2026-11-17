@@ -75,17 +75,17 @@ test_that("grist_workspace_create() returns the new ID", {
   expect_equal(as.character(req_body(mock$reqs[[1]])), '{"name":"Pets"}')
 })
 
-test_that("grist_workspace_delete() follows the same confirmation rules", {
+test_that("grist_workspace_delete() follows the same ask rules", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
 
-  grist_workspace_delete(12, confirm = TRUE, server = server)
+  grist_workspace_delete(12, ask = FALSE, server = server)
   expect_match(mock$reqs[[1]]$url, "/workspaces/12/remove$")
 
   grist_workspace_delete(
     12,
     mode = "permanent",
-    confirm = TRUE,
+    ask = FALSE,
     server = server
   )
   expect_match(mock$reqs[[2]]$url, "/workspaces/12/remove\\?permanent=true$")
@@ -93,7 +93,7 @@ test_that("grist_workspace_delete() follows the same confirmation rules", {
   local_interactive(FALSE)
   expect_error(
     grist_workspace_delete(12, server = server),
-    class = "gristmillr_confirm_required"
+    class = "gristmillr_ask_required"
   )
   expect_length(mock$reqs, 2)
 })

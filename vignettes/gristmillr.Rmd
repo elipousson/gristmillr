@@ -173,7 +173,7 @@ gristmillr.write_options = ...)`.
 Functions that delete things, such as `grist_doc_delete()` and
 `grist_workspace_delete()`, take `mode = "trash"` (the default, recoverable) or
 `"permanent"`. In an interactive session they ask for confirmation. In a
-script they refuse to run unless you pass `confirm = TRUE`.
+script they refuse to run unless you pass `ask = FALSE`.
 
 ```{r}
 doc |> grist_doc_delete()

@@ -25,7 +25,7 @@
 #' grist_workspaces()
 #' grist_docs()
 #' id <- grist_workspace_create(name = "Pets")
-#' grist_workspace_delete(id, confirm = TRUE)
+#' grist_workspace_delete(id, ask = FALSE)
 #' @export
 grist_orgs <- function(server = NULL, options = NULL) {
   server <- normalize_server(server %||% default_server())
@@ -128,7 +128,7 @@ grist_workspace_create <- function(
 grist_workspace_delete <- function(
   workspace,
   mode = c("trash", "permanent"),
-  confirm = NULL,
+  ask = NULL,
   server = NULL,
   options = NULL
 ) {
@@ -137,7 +137,7 @@ grist_workspace_delete <- function(
   server <- normalize_server(server %||% default_server())
   options <- as_request_options(options)
 
-  confirm_delete(
+  check_ask(
     "workspace",
     function() {
       body <- req_grist(server, c("workspaces", workspace), options) |>
@@ -145,7 +145,7 @@ grist_workspace_delete <- function(
       body$name
     },
     mode,
-    confirm
+    ask
   )
 
   req <- req_grist(server, c("workspaces", workspace, "remove"), options) |>

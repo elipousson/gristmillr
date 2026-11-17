@@ -21,3 +21,5 @@
 * `grist_attachments()`, `grist_attachment_info()`,
   `grist_attachments_upload()` and `grist_attachment_download()` list, upload
   and download attachments.
+* `grist_webhooks()`, `grist_webhook_create()`, `grist_webhook_update()`,
+  `grist_webhook_delete()` and `grist_webhook_queue_clear()` manage webhooks.

@@ -22,6 +22,9 @@ reference:
   - title: Attachments
     contents:
       - grist_attachments
+  - title: Webhooks
+    contents:
+      - grist_webhooks
   - title: Orgs and workspaces
     contents:
       - grist_orgs

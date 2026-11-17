@@ -49,4 +49,5 @@ Collate:
     'request.R'
     'sql.R'
     'tables.R'
+    'webhooks.R'
     'workspaces.R'

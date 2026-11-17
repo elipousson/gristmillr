@@ -37,6 +37,11 @@ confirm_delete <- function(
     ok <- isTRUE(ask_yes_no(
       sprintf("Move %s \"%s\" to the trash?", kind, label)
     ))
+  } else if (mode == "delete") {
+    # Deletion with no trash to restore from, but not worth typing a name.
+    ok <- isTRUE(ask_yes_no(
+      sprintf("Delete %s \"%s\"? This can't be undone.", kind, label)
+    ))
   } else {
     answer <- ask_text(
       sprintf(

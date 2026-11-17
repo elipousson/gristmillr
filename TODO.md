@@ -1,0 +1,103 @@
+# TODO
+
+What is left from the original scope and the follow-up requests. The
+core design is built: handle and options, records, schema, SQL,
+documents and workspaces, downloads, reference resolution, attachments,
+webhooks, column descriptions, history, export and import.
+
+## Before publishing
+
+`URL` and `BugReports` are set and
+[`pkgdown::check_pkgdown()`](https://pkgdown.r-lib.org/reference/check_pkgdown.html)
+passes.
+
+Rotate the Grist API key that was pasted into the development session.
+
+Run `ry check`. It isn’t installed here. `jarl check .` passes.
+
+If submitting to CRAN, do a pass with the `r-cran-extrachecks` skill.
+
+Choose which Grist-dependent examples run on a hosted site, if any.
+
+## Not verified against a live server
+
+[`grist_webhook_create()`](https://elipousson.github.io/gristmillr/reference/grist_webhooks.md),
+[`grist_webhook_update()`](https://elipousson.github.io/gristmillr/reference/grist_webhooks.md)
+and
+[`grist_webhook_delete()`](https://elipousson.github.io/gristmillr/reference/grist_webhooks.md).
+The local server rejects every webhook URL, so the live test skips. Set
+`ALLOWED_WEBHOOK_DOMAINS` on a test server to run it.
+
+[`grist_snapshot_restore()`](https://elipousson.github.io/gristmillr/reference/grist_snapshot_restore.md)
+and
+[`grist_snapshots_remove()`](https://elipousson.github.io/gristmillr/reference/grist_snapshot_restore.md).
+The local server only has a `"current"` snapshot.
+
+How the Grist interface renders a reference column after `display` (or
+`visible_col`) sets its display column through the REST API.
+[`grist_resolve_refs()`](https://elipousson.github.io/gristmillr/reference/grist_resolve_refs.md)
+reads it correctly, but the interface wasn’t checked.
+
+The naming rule in `grist_table_id()` (used by
+[`grist_import()`](https://elipousson.github.io/gristmillr/reference/grist_import.md)
+to match existing tables) covers capitalisation and invalid characters
+only.
+
+## Features not built
+
+A DBI target for
+[`grist_export()`](https://elipousson.github.io/gristmillr/reference/grist_export.md),
+for DuckDB, SQLite or Postgres files (list columns as JSON).
+
+Ask the data-dict maintainers to allow CSV and JSON in `source`. Until
+then those dictionaries have no `source`, so `data-dict validate-data`
+can’t check the files.
+
+[`grist_import()`](https://elipousson.github.io/gristmillr/reference/grist_import.md)
+from a named list of data frames, without a dictionary on disk. Needs a
+way to declare keys.
+
+Attachments in
+[`grist_export()`](https://elipousson.github.io/gristmillr/reference/grist_export.md)
+and
+[`grist_import()`](https://elipousson.github.io/gristmillr/reference/grist_import.md).
+
+Verify a migration by translating data-dict assertions to SQL and
+running them with
+[`grist_sql()`](https://elipousson.github.io/gristmillr/reference/grist_sql.md)
+(untested whether Grist’s SQLite accepts the output).
+
+A `gristapi` migration vignette. The README has a short function table.
+[`grist_records_upsert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
+is the equivalent of `sync_table()`.
+
+## Out of scope
+
+These stay reachable through
+[`grist_request()`](https://elipousson.github.io/gristmillr/reference/grist_request.md):
+SCIM and user admin, access rules, proposals, `POST /docs/{id}/apply`
+(raw user actions), archive attachment endpoints, document recovery and
+force-reload, and copying a document (`sourceDocumentId`, `asTemplate`).
+
+## Known limitations
+
+- An empty `Bool` cell reads back as `FALSE` (Grist behaviour). It’s
+  documented.
+- [`grist_resolve_refs()`](https://elipousson.github.io/gristmillr/reference/grist_resolve_refs.md)
+  makes one extra request per referenced table.
+- Formula columns are exported as values, not formulas.
+- [`grist_import()`](https://elipousson.github.io/gristmillr/reference/grist_import.md)
+  leaves created tables and rows in place if a request fails part way.
+- `grist_doc(api_key = 1)` errors, but the message names
+  [`grist_request_options()`](https://elipousson.github.io/gristmillr/reference/grist-options.md)
+  rather than
+  [`grist_doc()`](https://elipousson.github.io/gristmillr/reference/grist_doc.md).
+
+## Dependencies to watch
+
+- S7 is pre-1.0 (developed against 0.2.2.9000), and the minimum R is
+  4.2.
+- data-dict is at spec version 0.1.0. It doesn’t allow extension keys
+  and forbids foreign keys on list columns, which is why
+  [`grist_import()`](https://elipousson.github.io/gristmillr/reference/grist_import.md)
+  takes a `types` argument. Revisit if the spec changes.

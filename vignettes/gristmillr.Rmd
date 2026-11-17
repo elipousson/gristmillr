@@ -64,7 +64,14 @@ grist_doc_info(doc)
 ```
 
 You can also create documents with `grist_doc_create()`, which returns a
-handle.
+handle, or from a file with `grist_doc_import()`. It reads `.grist`, `.csv`,
+`.xlsx` and `.json` files and guesses column types from the values:
+
+```{r}
+doc <- grist_doc_import("pets.csv", workspace = 1234, name = "Pets")
+```
+
+For several related tables, see `vignette("migrating-data")`.
 
 ## Read data
 

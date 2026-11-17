@@ -158,3 +158,95 @@ changes_to_df <- function(details) {
     n = length(rows)
   )
 }
+
+#' Restore or remove document history
+#'
+#' @description
+#' These functions change a document's history and can't be undone, so they
+#' ask for confirmation like [grist_doc_delete()].
+#'
+#' * `grist_snapshot_restore()` replaces the document's current contents with
+#'   those of a snapshot.
+#' * `grist_snapshots_remove()` deletes snapshots.
+#' * `grist_doc_history_truncate()` discards all but the most recent actions
+#'   in the document's action history.
+#'
+#' In an interactive session they prompt with a yes/no question. In a script
+#' they refuse to run unless `confirm = TRUE`.
+#'
+#' @inheritParams grist_doc_compare
+#' @param snapshot_id,snapshot_ids Snapshot ID(s), as listed in the
+#'   `snapshot_id` column of [grist_snapshots()].
+#' @param keep Number of the most recent actions to keep.
+#' @param confirm `NULL` (the default) prompts in an interactive session and
+#'   errors otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+#' @returns The [grist_doc()] handle, invisibly.
+#' @family history
+#' @examplesIf FALSE
+#' doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
+#' snapshots <- grist_snapshots(doc)
+#'
+#' grist_snapshot_restore(doc, snapshots$snapshot_id[[2]])
+#' grist_snapshots_remove(doc, snapshots$snapshot_id[-1])
+#' grist_doc_history_truncate(doc, keep = 100)
+#' @export
+grist_snapshot_restore <- function(doc, snapshot_id, confirm = NULL) {
+  doc <- grist_doc(doc)
+  check_string(snapshot_id)
+  confirm_delete(
+    "document",
+    function() grist_doc_info(doc)$name,
+    "replace",
+    confirm,
+    verb = "replace"
+  )
+
+  grist_request(doc, "replace") |>
+    req_json_body(list(snapshotId = snapshot_id)) |>
+    grist_perform()
+
+  invisible(doc)
+}
+
+#' @rdname grist_snapshot_restore
+#' @export
+grist_snapshots_remove <- function(doc, snapshot_ids, confirm = NULL) {
+  doc <- grist_doc(doc)
+  if (!is.character(snapshot_ids) || length(snapshot_ids) == 0) {
+    cli::cli_abort(
+      "{.arg snapshot_ids} must be a character vector of snapshot IDs."
+    )
+  }
+  confirm_delete(
+    "snapshot",
+    function() paste(snapshot_ids, collapse = ", "),
+    "delete",
+    confirm
+  )
+
+  grist_request(doc, c("snapshots", "remove")) |>
+    req_json_body(list(snapshotIds = json_array(snapshot_ids))) |>
+    grist_perform()
+
+  invisible(doc)
+}
+
+#' @rdname grist_snapshot_restore
+#' @export
+grist_doc_history_truncate <- function(doc, keep, confirm = NULL) {
+  doc <- grist_doc(doc)
+  check_number_whole(keep, min = 0)
+  confirm_delete(
+    "history",
+    function() grist_doc_info(doc)$name,
+    "delete",
+    confirm,
+    verb = "truncate"
+  )
+
+  grist_request(doc, c("states", "remove")) |>
+    req_json_body(list(keep = keep)) |>
+    grist_perform()
+
+  invisible(doc)
+}

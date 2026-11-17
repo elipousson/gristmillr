@@ -6,7 +6,8 @@ confirm_delete <- function(
   label,
   mode,
   confirm,
-  call = caller_env()
+  call = caller_env(),
+  verb = "delete"
 ) {
   if (isTRUE(confirm)) {
     return(invisible(TRUE))
@@ -21,8 +22,8 @@ confirm_delete <- function(
   if (isFALSE(confirm) || !is_interactive()) {
     cli::cli_abort(
       c(
-        "Must confirm before deleting a {kind}.",
-        i = "Use {.code confirm = TRUE} to delete without a prompt."
+        "Must confirm before {verb_ing(verb)} a {kind}.",
+        i = "Use {.code confirm = TRUE} to {verb} without a prompt."
       ),
       class = "gristmillr_confirm_required",
       call = call
@@ -36,6 +37,14 @@ confirm_delete <- function(
   if (mode == "trash") {
     ok <- isTRUE(ask_yes_no(
       sprintf("Move %s \"%s\" to the trash?", kind, label)
+    ))
+  } else if (mode == "replace") {
+    ok <- isTRUE(ask_yes_no(
+      sprintf(
+        "Replace the current contents of the %s \"%s\"? This can't be undone.",
+        kind,
+        label
+      )
     ))
   } else if (mode == "delete") {
     # Deletion with no trash to restore from, but not worth typing a name.
@@ -55,12 +64,16 @@ confirm_delete <- function(
 
   if (!ok) {
     cli::cli_abort(
-      "Deletion cancelled.",
+      "Cancelled.",
       class = "gristmillr_cancelled",
       call = call
     )
   }
   invisible(TRUE)
+}
+
+verb_ing <- function(verb) {
+  paste0(sub("e$", "", verb), "ing")
 }
 
 ask_yes_no <- function(msg) {

@@ -79,4 +79,8 @@ comparison$changes
 grist_snapshots(doc)
 \dontshow{\}) # examplesIf}
 }
+\seealso{
+Other history:
+\code{\link[=grist_snapshot_restore]{grist_snapshot_restore()}}
+}
 \concept{history}

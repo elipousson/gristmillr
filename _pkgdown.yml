@@ -25,6 +25,7 @@ reference:
   - title: History
     contents:
       - grist_doc_history
+      - grist_snapshot_restore
   - title: Webhooks
     contents:
       - grist_webhooks

@@ -27,3 +27,6 @@
   `grist_columns_modify()` and `grist_table_create()` can set them.
 * `grist_doc_history()`, `grist_snapshots()` and `grist_doc_compare()` read a
   document's action history, snapshots and changes between states.
+* `grist_snapshot_restore()`, `grist_snapshots_remove()` and
+  `grist_doc_history_truncate()` restore a snapshot and remove snapshots or old
+  history, after confirmation.

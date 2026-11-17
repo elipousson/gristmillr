@@ -141,3 +141,86 @@ test_that("history works against a live server", {
 
   expect_equal(grist_doc_compare(doc)$summary, "same")
 })
+
+test_that("grist_snapshot_restore() posts the snapshot ID", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp(""))
+  doc <- test_doc()
+
+  expect_identical(grist_snapshot_restore(doc, "s1", confirm = TRUE), doc)
+
+  expect_match(mock$reqs[[1]]$url, "/docs/abc123/replace$")
+  expect_equal(as.character(req_body(mock$reqs[[1]])), '{"snapshotId":"s1"}')
+})
+
+test_that("grist_snapshots_remove() posts the snapshot IDs", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp('{"snapshotIds":["a"]}'))
+
+  grist_snapshots_remove(test_doc(), "a", confirm = TRUE)
+
+  expect_match(mock$reqs[[1]]$url, "/snapshots/remove$")
+  expect_equal(
+    as.character(req_body(mock$reqs[[1]])),
+    '{"snapshotIds":["a"]}'
+  )
+})
+
+test_that("grist_doc_history_truncate() posts how many actions to keep", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp(""))
+
+  grist_doc_history_truncate(test_doc(), keep = 5, confirm = TRUE)
+
+  expect_match(mock$reqs[[1]]$url, "/states/remove$")
+  expect_equal(as.character(req_body(mock$reqs[[1]])), '{"keep":5}')
+})
+
+test_that("history changes refuse to run unconfirmed in scripts", {
+  local_grist_env()
+  local_interactive(FALSE)
+  expect_snapshot(grist_snapshot_restore(test_doc(), "s1"), error = TRUE)
+  expect_snapshot(grist_snapshots_remove(test_doc(), "s1"), error = TRUE)
+  expect_snapshot(grist_doc_history_truncate(test_doc(), 1), error = TRUE)
+})
+
+test_that("history changes validate their arguments", {
+  local_grist_env()
+  expect_snapshot(grist_snapshot_restore(test_doc(), 1), error = TRUE)
+  expect_snapshot(grist_snapshots_remove(test_doc(), character()), error = TRUE)
+  expect_snapshot(grist_doc_history_truncate(test_doc(), -1), error = TRUE)
+})
+
+test_that("grist_snapshot_restore() prompts interactively", {
+  local_grist_env()
+  local_interactive(TRUE)
+  prompts <- character()
+  local_mocked_bindings(ask_yes_no = function(msg) {
+    prompts <<- c(prompts, msg)
+    FALSE
+  })
+  mock <- local_grist_mock(json_resp(
+    '{"id":"abc123","name":"Pets","workspace":{"id":1,"name":"H","org":{"domain":"docs"}}}'
+  ))
+
+  expect_error(
+    grist_snapshot_restore(test_doc(), "s1"),
+    class = "gristmillr_cancelled"
+  )
+  expect_match(prompts, "Replace the current contents of the document")
+  expect_length(mock$reqs, 1)
+})
+
+test_that("truncating history works against a live server", {
+  skip_if_no_grist()
+  doc <- local_scratch_doc()
+  grist_table_create(doc, "T", c(x = "Text"))
+  grist_records_add(doc, "T", data.frame(x = c("a", "b")))
+
+  expect_identical(
+    grist_doc_history_truncate(doc, keep = 2, confirm = TRUE),
+    doc
+  )
+  expect_lte(nrow(grist_doc_history(doc)), 3)
+  expect_equal(grist_records(doc, "T")$x, c("a", "b"))
+})

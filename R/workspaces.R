@@ -14,7 +14,9 @@
 #'
 #' @inheritParams grist_doc_create
 #' @param org An org ID or domain. `"current"` is the org that matches the
-#'   server URL.
+#'   server URL. If the server has no current org (as with Grist Desktop) and
+#'   you can access exactly one org, that org is used. Otherwise, set `org` to
+#'   a value from `grist_orgs()$id`.
 #' @param workspace A workspace ID.
 #' @returns A data frame for the listing functions. `grist_workspace_create()`
 #'   returns the new workspace ID invisibly. `grist_workspace_delete()` and
@@ -117,9 +119,11 @@ grist_workspace_create <- function(
   server <- normalize_server(server %||% default_server())
   options <- as_request_options(options)
 
-  id <- req_grist(server, c("orgs", org, "workspaces"), options) |>
-    req_json_body(list(name = name)) |>
-    grist_perform()
+  id <- with_org(org, server, options, function(org) {
+    req_grist(server, c("orgs", org, "workspaces"), options) |>
+      req_json_body(list(name = name)) |>
+      grist_perform()
+  })
   invisible(as.integer(id))
 }
 
@@ -173,6 +177,37 @@ grist_workspace_restore <- function(workspace, server = NULL, options = NULL) {
 list_workspaces <- function(org, server, options, call = caller_env()) {
   server <- normalize_server(server %||% default_server())
   options <- as_request_options(options)
-  req_grist(server, c("orgs", org, "workspaces"), options, call = call) |>
-    grist_perform(call = call)
+  with_org(org, server, options, call = call, function(org) {
+    req_grist(server, c("orgs", org, "workspaces"), options, call = call) |>
+      grist_perform(call = call)
+  })
+}
+
+# Run `fn(org)`. A server with no "current" org (such as Grist Desktop) rejects
+# `org = "current"` with HTTP 400. When that happens and the account has exactly
+# one org, retry with that org's ID.
+with_org <- function(org, server, options, fn, call = caller_env()) {
+  if (!identical(org, "current")) {
+    return(fn(org))
+  }
+  try_fetch(
+    fn(org),
+    gristmillr_http_error = function(cnd) {
+      if (!inherits(cnd$parent, "httr2_http_400")) {
+        return(zap())
+      }
+      orgs <- grist_orgs(server, options)
+      if (nrow(orgs) != 1) {
+        cli::cli_abort(
+          c(
+            "Can't find the current org.",
+            i = "Set {.arg org} to one of {.code grist_orgs()$id}."
+          ),
+          parent = cnd,
+          call = call
+        )
+      }
+      fn(orgs$id[[1]])
+    }
+  )
 }

@@ -39,7 +39,9 @@ from \code{getOption("gristmillr.request_options")} or
 \code{\link[=grist_request_options]{grist_request_options()}} is used.}
 
 \item{org}{An org ID or domain. \code{"current"} is the org that matches the
-server URL.}
+server URL. If the server has no current org (as with Grist Desktop) and
+you can access exactly one org, that org is used. Otherwise, set \code{org} to
+a value from \code{grist_orgs()$id}.}
 
 \item{name}{Document name.}
 

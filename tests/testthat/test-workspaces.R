@@ -121,3 +121,48 @@ test_that("grist_workspace_restore() posts to unremove", {
   expect_equal(grist_workspace_restore(12, server = server), 12L)
   expect_match(mock$reqs[[1]]$url, "/workspaces/12/unremove$")
 })
+
+test_that("org = 'current' falls back to the only org when the server has none", {
+  local_grist_env()
+  mock <- local_grist_mock(
+    json_resp('{"error":"No organization chosen"}', status = 400L),
+    json_resp('[{"id":2,"name":"Personal","domain":"docs-5"}]'),
+    json_resp(workspaces_json)
+  )
+
+  out <- grist_workspaces(server = server)
+
+  expect_equal(out$id, 12:13)
+  expect_equal(
+    mock$reqs[[3]]$url,
+    "https://x.getgrist.com/api/orgs/2/workspaces"
+  )
+
+  mock <- local_grist_mock(
+    json_resp('{"error":"No organization chosen"}', status = 400L),
+    json_resp('[{"id":2,"name":"Personal","domain":"docs-5"}]'),
+    json_resp("155")
+  )
+  expect_equal(grist_workspace_create("Pets", server = server), 155L)
+  expect_match(mock$reqs[[3]]$url, "/orgs/2/workspaces$")
+})
+
+test_that("org = 'current' errors helpfully when several orgs exist", {
+  local_grist_env()
+  local_grist_mock(
+    json_resp('{"error":"No organization chosen"}', status = 400L),
+    json_resp('[{"id":1,"name":"A","domain":"a"},{"id":2,"name":"B","domain":"b"}]')
+  )
+  expect_snapshot(grist_workspaces(server = server), error = TRUE)
+})
+
+test_that("org = 'current' does not retry other errors or explicit orgs", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp('{"error":"nope"}', status = 403L))
+  expect_error(grist_workspaces(server = server), class = "gristmillr_http_error")
+  expect_length(mock$reqs, 1)
+
+  mock <- local_grist_mock(json_resp('{"error":"nope"}', status = 400L))
+  expect_error(grist_workspaces(7, server), class = "gristmillr_http_error")
+  expect_length(mock$reqs, 1)
+})

@@ -1,5 +1,7 @@
 # gristmillr 0.0.0.9000
 
+* `grist_workspaces()`, `grist_docs()` and `grist_workspace_create()` use your
+  only org when the server has no "current" org, as with Grist Desktop.
 * Functions that delete or overwrite things (`grist_doc_delete()`,
   `grist_workspace_delete()`, `grist_webhook_delete()`,
   `grist_snapshot_restore()`, `grist_snapshots_remove()` and

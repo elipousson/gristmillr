@@ -25,3 +25,5 @@
   `grist_webhook_delete()` and `grist_webhook_queue_clear()` manage webhooks.
 * `grist_columns()` returns column descriptions, and `grist_columns_add()`,
   `grist_columns_modify()` and `grist_table_create()` can set them.
+* `grist_doc_history()`, `grist_snapshots()` and `grist_doc_compare()` read a
+  document's action history, snapshots and changes between states.

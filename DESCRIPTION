@@ -42,6 +42,7 @@ Collate:
     'doc.R'
     'download.R'
     'gristmillr-package.R'
+    'history.R'
     'import-standalone-obj-type.R'
     'import-standalone-types-check.R'
     'records.R'

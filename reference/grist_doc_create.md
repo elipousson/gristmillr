@@ -1,9 +1,10 @@
 # Create, describe, update, move and delete documents
 
-- `grist_doc_create()` creates an empty document in a workspace and
-  returns a
+- `grist_doc_create()` creates a new document in a workspace and returns
+  a
   [`grist_doc()`](https://elipousson.github.io/gristmillr/reference/grist_doc.md)
-  handle.
+  handle. Grist starts every new document with an empty table named
+  `Table1`.
 
 - `grist_doc_info()` describes a document.
 
@@ -33,7 +34,7 @@ grist_doc_update(doc, name = NULL, pinned = NULL)
 
 grist_doc_move(doc, workspace)
 
-grist_doc_delete(doc, mode = c("trash", "permanent"), confirm = NULL)
+grist_doc_delete(doc, mode = c("trash", "permanent"), ask = NULL)
 
 grist_doc_restore(doc)
 ```
@@ -81,10 +82,11 @@ grist_doc_restore(doc)
   `"trash"` moves the document to the trash, where it can be restored
   with `grist_doc_restore()`. `"permanent"` deletes it for good.
 
-- confirm:
+- ask:
 
-  `NULL` (the default) prompts in an interactive session and errors
-  otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+  Whether to prompt before running. `NULL` (the default) and `TRUE`
+  prompt in an interactive session and error in a script. `FALSE` skips
+  the prompt.
 
 ## Value
 
@@ -102,7 +104,7 @@ invisibly.
 `grist_doc_delete()` asks for confirmation. In an interactive session it
 prompts: a yes/no question for `mode = "trash"`, and typing the document
 name for `mode = "permanent"`. In a script, it refuses to delete unless
-`confirm = TRUE`.
+`ask = FALSE`.
 
 ## See also
 

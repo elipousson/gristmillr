@@ -9,7 +9,7 @@ in the document's action history.
 
 
 In an interactive session they prompt with a yes/no question. In a script
-they refuse to run unless confirm = TRUE."><meta property="og:description" content="These functions change a document's history and can't be undone, so they
+they refuse to run unless ask = FALSE."><meta property="og:description" content="These functions change a document's history and can't be undone, so they
 ask for confirmation like grist_doc_delete().
 grist_snapshot_restore() replaces the document's current contents with
 those of a snapshot.
@@ -19,7 +19,7 @@ in the document's action history.
 
 
 In an interactive session they prompt with a yes/no question. In a script
-they refuse to run unless confirm = TRUE."></head><body>
+they refuse to run unless ask = FALSE."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -67,16 +67,16 @@ those of a snapshot.</p></li>
 <li><p><code>grist_doc_history_truncate()</code> discards all but the most recent actions
 in the document's action history.</p></li>
 </ul><p>In an interactive session they prompt with a yes/no question. In a script
-they refuse to run unless <code>confirm = TRUE</code>.</p>
+they refuse to run unless <code>ask = FALSE</code>.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">grist_snapshot_restore</span><span class="op">(</span><span class="va">doc</span>, <span class="va">snapshot_id</span>, confirm <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">grist_snapshot_restore</span><span class="op">(</span><span class="va">doc</span>, <span class="va">snapshot_id</span>, ask <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">grist_snapshots_remove</span><span class="op">(</span><span class="va">doc</span>, <span class="va">snapshot_ids</span>, confirm <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">grist_snapshots_remove</span><span class="op">(</span><span class="va">doc</span>, <span class="va">snapshot_ids</span>, ask <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">grist_doc_history_truncate</span><span class="op">(</span><span class="va">doc</span>, <span class="va">keep</span>, confirm <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">grist_doc_history_truncate</span><span class="op">(</span><span class="va">doc</span>, <span class="va">keep</span>, ask <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -93,9 +93,10 @@ they refuse to run unless <code>confirm = TRUE</code>.</p>
 <code>snapshot_id</code> column of <code><a href="grist_doc_history.html">grist_snapshots()</a></code>.</p></dd>
 
 
-<dt id="arg-confirm">confirm<a class="anchor" aria-label="anchor" href="#arg-confirm"></a></dt>
-<dd><p><code>NULL</code> (the default) prompts in an interactive session and
-errors otherwise. <code>TRUE</code> skips the prompt. <code>FALSE</code> always errors.</p></dd>
+<dt id="arg-ask">ask<a class="anchor" aria-label="anchor" href="#arg-ask"></a></dt>
+<dd><p>Whether to prompt before running. <code>NULL</code> (the default) and
+<code>TRUE</code> prompt in an interactive session and error in a script. <code>FALSE</code>
+skips the prompt.</p></dd>
 
 
 <dt id="arg-keep">keep<a class="anchor" aria-label="anchor" href="#arg-keep"></a></dt>

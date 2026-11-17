@@ -44,7 +44,7 @@ grist_webhook_update(
   is_ready_column = NULL
 )
 
-grist_webhook_delete(doc, id, confirm = NULL)
+grist_webhook_delete(doc, id, ask = NULL)
 
 grist_webhook_queue_clear(doc, id = NULL)
 ```
@@ -89,10 +89,11 @@ grist_webhook_queue_clear(doc, id = NULL)
   `grist_webhooks()`. For `grist_webhook_queue_clear()`, `NULL` clears
   the queues of all webhooks in the document.
 
-- confirm:
+- ask:
 
-  `NULL` (the default) prompts in an interactive session and errors
-  otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+  Whether to prompt before running. `NULL` (the default) and `TRUE`
+  prompt in an interactive session and error in a script. `FALSE` skips
+  the prompt.
 
 ## Value
 
@@ -107,7 +108,7 @@ new webhook ID, and the other functions return `doc`, all invisibly.
 ## Deleting
 
 `grist_webhook_delete()` asks for confirmation in an interactive session
-and refuses to run in a script unless `confirm = TRUE`, like
+and refuses to run in a script unless `ask = FALSE`, like
 [`grist_doc_delete()`](https://elipousson.github.io/gristmillr/reference/grist_doc_create.md).
 
 ## Examples

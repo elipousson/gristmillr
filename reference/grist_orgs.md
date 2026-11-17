@@ -31,7 +31,7 @@ grist_workspace_create(name, org = "current", server = NULL, options = NULL)
 grist_workspace_delete(
   workspace,
   mode = c("trash", "permanent"),
-  confirm = NULL,
+  ask = NULL,
   server = NULL,
   options = NULL
 )
@@ -61,7 +61,9 @@ grist_workspace_restore(workspace, server = NULL, options = NULL)
 - org:
 
   An org ID or domain. `"current"` is the org that matches the server
-  URL.
+  URL. If the server has no current org (as with Grist Desktop) and you
+  can access exactly one org, that org is used. Otherwise, set `org` to
+  a value from `grist_orgs()$id`.
 
 - name:
 
@@ -78,10 +80,11 @@ grist_workspace_restore(workspace, server = NULL, options = NULL)
   [`grist_doc_restore()`](https://elipousson.github.io/gristmillr/reference/grist_doc_create.md).
   `"permanent"` deletes it for good.
 
-- confirm:
+- ask:
 
-  `NULL` (the default) prompts in an interactive session and errors
-  otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+  Whether to prompt before running. `NULL` (the default) and `TRUE`
+  prompt in an interactive session and error in a script. `FALSE` skips
+  the prompt.
 
 ## Value
 
@@ -97,6 +100,6 @@ grist_orgs()
 grist_workspaces()
 grist_docs()
 id <- grist_workspace_create(name = "Pets")
-grist_workspace_delete(id, confirm = TRUE)
+grist_workspace_delete(id, ask = FALSE)
 }
 ```

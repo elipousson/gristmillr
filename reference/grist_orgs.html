@@ -83,7 +83,7 @@ workspace to the trash or delete it permanently, and restore it. As with
 <span><span class="fu">grist_workspace_delete</span><span class="op">(</span></span>
 <span>  <span class="va">workspace</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trash"</span>, <span class="st">"permanent"</span><span class="op">)</span>,</span>
-<span>  confirm <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ask <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  server <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  options <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
@@ -111,7 +111,9 @@ from <code>getOption("gristmillr.request_options")</code> or
 
 <dt id="arg-org">org<a class="anchor" aria-label="anchor" href="#arg-org"></a></dt>
 <dd><p>An org ID or domain. <code>"current"</code> is the org that matches the
-server URL.</p></dd>
+server URL. If the server has no current org (as with Grist Desktop) and
+you can access exactly one org, that org is used. Otherwise, set <code>org</code> to
+a value from <code>grist_orgs()$id</code>.</p></dd>
 
 
 <dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
@@ -127,9 +129,10 @@ server URL.</p></dd>
 restored with <code><a href="grist_doc_create.html">grist_doc_restore()</a></code>. <code>"permanent"</code> deletes it for good.</p></dd>
 
 
-<dt id="arg-confirm">confirm<a class="anchor" aria-label="anchor" href="#arg-confirm"></a></dt>
-<dd><p><code>NULL</code> (the default) prompts in an interactive session and
-errors otherwise. <code>TRUE</code> skips the prompt. <code>FALSE</code> always errors.</p></dd>
+<dt id="arg-ask">ask<a class="anchor" aria-label="anchor" href="#arg-ask"></a></dt>
+<dd><p>Whether to prompt before running. <code>NULL</code> (the default) and
+<code>TRUE</code> prompt in an interactive session and error in a script. <code>FALSE</code>
+skips the prompt.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -146,7 +149,7 @@ returns the new workspace ID invisibly. <code>grist_workspace_delete()</code> an
 <span class="r-in"><span><span class="fu">grist_workspaces</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">grist_docs</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu">grist_workspace_create</span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Pets"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">grist_workspace_delete</span><span class="op">(</span><span class="va">id</span>, confirm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">grist_workspace_delete</span><span class="op">(</span><span class="va">id</span>, ask <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>

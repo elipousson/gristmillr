@@ -97,7 +97,7 @@ because an endpoint was unreachable.</p></li>
 <span>  is_ready_column <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">grist_webhook_delete</span><span class="op">(</span><span class="va">doc</span>, <span class="va">id</span>, confirm <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">grist_webhook_delete</span><span class="op">(</span><span class="va">doc</span>, <span class="va">id</span>, ask <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">grist_webhook_queue_clear</span><span class="op">(</span><span class="va">doc</span>, id <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -146,9 +146,10 @@ clears it.</p></dd>
 queues of all webhooks in the document.</p></dd>
 
 
-<dt id="arg-confirm">confirm<a class="anchor" aria-label="anchor" href="#arg-confirm"></a></dt>
-<dd><p><code>NULL</code> (the default) prompts in an interactive session and
-errors otherwise. <code>TRUE</code> skips the prompt. <code>FALSE</code> always errors.</p></dd>
+<dt id="arg-ask">ask<a class="anchor" aria-label="anchor" href="#arg-ask"></a></dt>
+<dd><p>Whether to prompt before running. <code>NULL</code> (the default) and
+<code>TRUE</code> prompt in an interactive session and error in a script. <code>FALSE</code>
+skips the prompt.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -167,7 +168,7 @@ functions return <code>doc</code>, all invisibly.</p>
 
 
 <p><code>grist_webhook_delete()</code> asks for confirmation in an interactive session
-and refuses to run in a script unless <code>confirm = TRUE</code>, like
+and refuses to run in a script unless <code>ask = FALSE</code>, like
 <code><a href="grist_doc_create.html">grist_doc_delete()</a></code>.</p>
     </div>
 

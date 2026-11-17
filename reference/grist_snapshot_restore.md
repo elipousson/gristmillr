@@ -13,16 +13,16 @@ ask for confirmation like
   actions in the document's action history.
 
 In an interactive session they prompt with a yes/no question. In a
-script they refuse to run unless `confirm = TRUE`.
+script they refuse to run unless `ask = FALSE`.
 
 ## Usage
 
 ``` r
-grist_snapshot_restore(doc, snapshot_id, confirm = NULL)
+grist_snapshot_restore(doc, snapshot_id, ask = NULL)
 
-grist_snapshots_remove(doc, snapshot_ids, confirm = NULL)
+grist_snapshots_remove(doc, snapshot_ids, ask = NULL)
 
-grist_doc_history_truncate(doc, keep, confirm = NULL)
+grist_doc_history_truncate(doc, keep, ask = NULL)
 ```
 
 ## Arguments
@@ -37,10 +37,11 @@ grist_doc_history_truncate(doc, keep, confirm = NULL)
   Snapshot ID(s), as listed in the `snapshot_id` column of
   [`grist_snapshots()`](https://elipousson.github.io/gristmillr/reference/grist_doc_history.md).
 
-- confirm:
+- ask:
 
-  `NULL` (the default) prompts in an interactive session and errors
-  otherwise. `TRUE` skips the prompt. `FALSE` always errors.
+  Whether to prompt before running. `NULL` (the default) and `TRUE`
+  prompt in an interactive session and error in a script. `FALSE` skips
+  the prompt.
 
 - keep:
 

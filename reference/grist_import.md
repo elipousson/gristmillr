@@ -67,7 +67,10 @@ grist_import(
 
   What to do when a table already exists in the document: stop with an
   `"error"` before changing anything, or `"append"` rows to it. Existing
-  tables keep their columns and types.
+  tables keep their columns and types. A document made with
+  [`grist_doc_create()`](https://elipousson.github.io/gristmillr/reference/grist_doc_create.md)
+  already has an empty `Table1`, which counts as an existing table if
+  the data you import also has a `Table1`.
 
 - options:
 

@@ -114,7 +114,9 @@ leave the reference <code>"empty"</code>.</p></dd>
 <dt id="arg-if-exists">if_exists<a class="anchor" aria-label="anchor" href="#arg-if-exists"></a></dt>
 <dd><p>What to do when a table already exists in the document:
 stop with an <code>"error"</code> before changing anything, or <code>"append"</code> rows to
-it. Existing tables keep their columns and types.</p></dd>
+it. Existing tables keep their columns and types. A document made with
+<code><a href="grist_doc_create.html">grist_doc_create()</a></code> already has an empty <code>Table1</code>, which counts as an
+existing table if the data you import also has a <code>Table1</code>.</p></dd>
 
 
 <dt id="arg-options">options<a class="anchor" aria-label="anchor" href="#arg-options"></a></dt>

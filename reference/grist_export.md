@@ -38,7 +38,8 @@ grist_export(
 
 - tables:
 
-  Table IDs to export. `NULL` exports every table.
+  Table IDs to export. `NULL` exports every table, including the empty
+  `Table1` that Grist puts in new documents.
 
 - format:
 

@@ -184,7 +184,7 @@ and
 [`grist_workspace_delete()`](https://elipousson.github.io/gristmillr/reference/grist_orgs.md),
 take `mode = "trash"` (the default, recoverable) or `"permanent"`. In an
 interactive session they ask for confirmation. In a script they refuse
-to run unless you pass `confirm = TRUE`.
+to run unless you pass `ask = FALSE`.
 
 ``` r
 

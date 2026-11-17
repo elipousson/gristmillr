@@ -32,6 +32,9 @@ descriptions, history, export and import.
 
 - [ ] A DBI target for `grist_export()`, for DuckDB, SQLite or Postgres files
   (list columns as JSON).
+- [ ] Ask the data-dict maintainers to allow CSV and JSON in `source`. Until
+  then those dictionaries have no `source`, so `data-dict validate-data` can't
+  check the files.
 - [ ] `grist_import()` from a named list of data frames, without a dictionary
   on disk. Needs a way to declare keys.
 - [ ] Attachments in `grist_export()` and `grist_import()`.

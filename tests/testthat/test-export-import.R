@@ -415,3 +415,236 @@ test_that("grist_import() checks before changing anything", {
   grist_import(doc, dir, tables = "parents", if_exists = "append")
   expect_equal(nrow(grist_records(doc, "Parents")), 4)
 })
+
+# Text formats --------------------------------------------------------------
+
+test_that("coerce_column() applies dictionary types to text", {
+  expect_equal(coerce_column(c("1", NA, "3"), "number"), c(1L, NA, 3L))
+  expect_equal(coerce_column(c("1.5", "2"), "number"), c(1.5, 2))
+  expect_equal(coerce_column(c("1", "3000000000"), "number(id)"), c(1, 3e9))
+  expect_equal(
+    coerce_column(c("TRUE", "false", NA), "boolean"),
+    c(TRUE, FALSE, NA)
+  )
+  expect_equal(coerce_column(c(TRUE, NA), "boolean"), c(TRUE, NA))
+  expect_equal(
+    coerce_column(c("2020-01-02", NA), "date"),
+    as.Date(c("2020-01-02", NA))
+  )
+  expect_equal(
+    coerce_column("2024-03-10T06:30:00Z", "datetime"),
+    as.POSIXct("2024-03-10 06:30:00", tz = "UTC")
+  )
+  expect_equal(coerce_column(c("a", NA), "string"), c("a", ""))
+  expect_equal(coerce_column(c(NA, "on"), "enum"), c("", "on"))
+  expect_equal(
+    coerce_column(c('["a","b"]', "[]", NA), "list(enum)"),
+    list(c("a", "b"), character(), character())
+  )
+  expect_equal(
+    coerce_column(list(c(1, 2), NULL, 3), "list(number(id))"),
+    list(1:2, integer(), 3L)
+  )
+  expect_equal(coerce_column(c("x", "y"), NULL), c("x", "y"))
+})
+
+test_that("table files round trip through every format", {
+  skip_if_not_installed("nanoparquet")
+  data <- data.frame(
+    id = 1:3,
+    name = c('He said "hi", twice\nnewline é', "", "plain"),
+    zip = c("02134", "99", "00000"),
+    n = c(1L, NA, 3L),
+    x = c(1.25, 2, NA),
+    ok = c(TRUE, FALSE, NA),
+    d = as.Date(c("2020-01-02", NA, "2021-05-06")),
+    seen = as.POSIXct(
+      c("2024-03-10 01:30:00", NA, "2024-11-03 01:30:00"),
+      tz = "UTC"
+    )
+  )
+  data$tags <- list(c("a", "b"), "a", character())
+  columns <- list(
+    id = list(type = "number(id)"),
+    name = list(type = "string"),
+    zip = list(type = "string"),
+    n = list(type = "number"),
+    x = list(type = "number"),
+    ok = list(type = "boolean"),
+    d = list(type = "date"),
+    seen = list(type = "datetime"),
+    tags = list(type = "list(enum)")
+  )
+
+  for (format in c("parquet", "csv", "json")) {
+    path <- withr::local_tempfile(fileext = paste0(".", format))
+    write_table_file(data, path, format)
+    out <- read_table_file(path, format, columns)
+    expect_equal(out$name, data$name, info = format)
+    expect_equal(out$zip, data$zip, info = format)
+    expect_equal(out$n, data$n, info = format)
+    expect_equal(out$ok, data$ok, info = format)
+    expect_equal(out$d, data$d, info = format)
+    expect_equal(out$seen, data$seen, info = format)
+    expect_equal(out$tags, data$tags, info = format)
+  }
+})
+
+test_that("an empty JSON file gives an empty table", {
+  path <- withr::local_tempfile(fileext = ".json")
+  writeLines("[]", path)
+  out <- read_table_file(
+    path,
+    "json",
+    list(a = list(type = "number"), b = list(type = "string"))
+  )
+  expect_equal(nrow(out), 0)
+  expect_named(out, c("a", "b"))
+})
+
+test_that("find_table_file() uses the source, then file names", {
+  dir <- withr::local_tempdir()
+  spec <- list(name = "Things", source = "things.parquet")
+  expect_null(find_table_file(spec, dir, "auto"))
+
+  file.create(file.path(dir, "Things.json"))
+  expect_equal(find_table_file(spec, dir, "auto")$format, "json")
+  expect_null(find_table_file(spec, dir, "csv"))
+
+  file.create(file.path(dir, "Things.csv"))
+  expect_equal(find_table_file(spec, dir, "auto")$format, "csv")
+  expect_equal(find_table_file(spec, dir, "json")$format, "json")
+
+  file.create(file.path(dir, "things.parquet"))
+  expect_equal(find_table_file(spec, dir, "auto")$format, "parquet")
+  expect_equal(find_table_file(spec, dir, "csv")$format, "csv")
+})
+
+test_that("grist_export() and grist_import() validate format", {
+  doc <- test_doc()
+  expect_snapshot(grist_export(doc, format = "xlsx"), error = TRUE)
+  expect_snapshot(grist_import(doc, "x", format = "xlsx"), error = TRUE)
+})
+
+test_that("export and import round trip in CSV and JSON", {
+  skip_if_no_migration()
+  src <- local_scratch_doc()
+  grist_table_create(
+    src,
+    "Things",
+    data.frame(
+      id = c(
+        "name",
+        "zip",
+        "n",
+        "x",
+        "ok",
+        "d",
+        "seen",
+        "status",
+        "tags",
+        "buddy"
+      ),
+      type = c(
+        "Text",
+        "Text",
+        "Int",
+        "Numeric",
+        "Bool",
+        "Date",
+        "DateTime:America/New_York",
+        "Choice",
+        "ChoiceList",
+        "Ref:Things"
+      ),
+      widget_options = c(
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        NA,
+        '{"choices":["on","off"]}',
+        '{"choices":["a","b"]}',
+        NA
+      )
+    )
+  )
+  grist_records_add(
+    src,
+    "Things",
+    data.frame(
+      name = c('He said "hi", twice\nnewline é', "", "plain"),
+      zip = c("02134", "99", ""),
+      n = c(1L, NA, 3L),
+      x = c(1.25, 2, NA),
+      ok = c(TRUE, FALSE, TRUE),
+      d = as.Date(c("2020-01-02", NA, "2021-05-06")),
+      seen = as.POSIXct(
+        c("2024-03-10 01:30:00", NA, "2024-11-03 01:30:00"),
+        tz = "America/New_York"
+      ),
+      status = c("on", "", "off"),
+      tags = I(list(c("a", "b"), "a", character())),
+      buddy = c(2L, 3L, 1L)
+    )
+  )
+
+  for (format in c("csv", "json")) {
+    out <- withr::local_tempdir()
+    exported <- grist_export(src, out, tables = "Things", format = format)
+    expect_equal(basename(exported$path), paste0("Things.", format))
+    dict <- yaml12::read_yaml(file.path(out, "data-dict.yaml"))
+    expect_null(dict$tables[[1]]$source)
+
+    dst <- local_scratch_doc()
+    grist_import(dst, out)
+    expect_equal(
+      as.data.frame(grist_records(dst, "Things")),
+      as.data.frame(grist_records(src, "Things")),
+      info = format
+    )
+    expect_equal(
+      grist_columns(dst, "Things")$type,
+      grist_columns(src, "Things")$type,
+      info = format
+    )
+  }
+})
+
+test_that("grist_import() reads CSV files for a dictionary without sources", {
+  skip_if_no_migration()
+  doc <- local_scratch_doc()
+  dir <- withr::local_tempdir()
+  utils::write.csv(
+    data.frame(
+      emp_id = c("e1", "e2"),
+      name = c("Ann", "Bob"),
+      manager = c("", "e1")
+    ),
+    file.path(dir, "employees.csv"),
+    row.names = FALSE,
+    na = ""
+  )
+  writeLines(
+    c(
+      "$version: 0.1.0",
+      "tables:",
+      "  - name: employees",
+      "    columns:",
+      "      - {name: emp_id, type: string, constraints: [primary_key], examples: [e1]}",
+      "      - {name: name, type: string, examples: [Ann]}",
+      "      - {name: manager, type: string, constraints: [foreign_key], examples: [e1]}",
+      "relationships:",
+      "  - {join: employees.manager = employees.emp_id, cardinality: many-to-one}"
+    ),
+    file.path(dir, "data-dict.yaml")
+  )
+
+  grist_import(doc, dir)
+
+  out <- grist_records(doc, "Employees")
+  expect_equal(out$name, c("Ann", "Bob"))
+  expect_equal(out$manager, c(NA, 1L))
+})

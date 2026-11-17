@@ -75,3 +75,19 @@
       Error in `grist_import()`:
       ! `types` names a column that isn't in the dictionary: "kids.nope".
 
+# grist_export() and grist_import() validate format
+
+    Code
+      grist_export(doc, format = "xlsx")
+    Condition
+      Error in `grist_export()`:
+      ! `format` must be one of "parquet", "csv", or "json", not "xlsx".
+
+---
+
+    Code
+      grist_import(doc, "x", format = "xlsx")
+    Condition
+      Error in `grist_import()`:
+      ! `format` must be one of "auto", "parquet", "csv", or "json", not "xlsx".
+

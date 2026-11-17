@@ -12,14 +12,14 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
 `grist_export()` and `grist_import()` move whole sets of tables between Grist
-and a folder of files. The folder holds one Parquet file per table and a
+and a folder of files. The folder holds one file per table (Parquet by default, or CSV or JSON) and a
 `data-dict.yaml` that describes the tables: column types, labels and
 descriptions, and how tables refer to each other. The description follows the
 [data-dict](https://data-dict.tidyverse.org/) specification, so other tools
 can read it, and `data-dict validate-data` can check the files.
 
-Both functions need the yaml12 and nanoparquet packages, which gristmillr only
-suggests.
+Both functions need the yaml12 package, and Parquet files need the nanoparquet
+package. gristmillr only suggests them.
 
 ```{r}
 library(gristmillr)
@@ -73,6 +73,25 @@ dictionary will be shared separately from the data, use
 `grist_export(doc, "pets-export", examples = "none")`, which leaves them out
 and adds a `todo` to each column.
 
+### File formats
+
+`format` chooses how tables are written:
+
+```{r}
+grist_export(doc, "pets-export", format = "json")
+```
+
+* `"parquet"` (the default) keeps every type, including time zones and list
+  columns.
+* `"json"` keeps numbers, logicals, missing values and list columns. Dates and
+  date-times are written as ISO 8601 text, with date-times in UTC.
+* `"csv"` is plain text, so list columns are written as JSON arrays, and an
+  empty `Text` cell can't be told apart from a missing one.
+
+data-dict can only point at Parquet files with `source`. For CSV and JSON the
+dictionary leaves `source` out, and files are found by name: `Orders.csv` or
+`Orders.json` next to the dictionary.
+
 ## Import into a document
 
 ```{r}
@@ -95,6 +114,14 @@ named in the dictionary are created with the types in the table below.
 | `list(string)` | `ChoiceList` |
 | `foreign_key` with a relationship | `Ref` |
 | no `type` | `Any` |
+
+`grist_import()` reads Parquet, CSV or JSON files. For a Parquet `source` in
+the dictionary it uses that file, and otherwise it looks for `<table>.parquet`,
+`<table>.csv` and `<table>.json` next to the dictionary (or only the `format`
+you give). CSV and JSON have no types of their own, so values are converted to
+the types in the dictionary. A `number` column of whole numbers becomes `Int`,
+so use `types = c("Table.column" = "Numeric")` for a `Numeric` column that
+happens to hold only whole numbers.
 
 Only columns in the dictionary are imported. A column named `id` isn't created,
 because Grist has its own row IDs, but it works as a key for references. Other
@@ -128,7 +155,8 @@ the second is the only one gristmillr doesn't do for you.
 1. **Get each table into a data frame.** How depends on the tool. The data
    frames need a column that identifies each row (a primary key), and
    columns that point at other tables use those keys.
-2. **Describe the tables.** Write the data frames to Parquet and write a
+2. **Describe the tables.** Write the data frames to Parquet (or CSV or JSON, named after
+   the table) and write a
    `data-dict.yaml` saying which column is the primary key, which columns are
    foreign keys, and what type each column is.
 3. **Import.** `grist_import()` turns the foreign keys into references.

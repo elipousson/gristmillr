@@ -1,9 +1,9 @@
-#' Import tables from Parquet files and a data dictionary
+#' Import tables from files and a data dictionary
 #'
 #' @description
 #' `grist_import()` creates tables in a document from a
 #' [data-dict](https://data-dict.tidyverse.org/) `data-dict.yaml` file and the
-#' Parquet files it points to, then loads the rows. It is the counterpart of
+#' Parquet, CSV or JSON files that hold the data, then loads the rows. It is the counterpart of
 #' [grist_export()], and also suits data prepared elsewhere, such as lists
 #' copied out of another low-code tool.
 #'
@@ -40,7 +40,20 @@
 #' A `Ref` column shows its target's row ID unless you choose a column to show
 #' with `display`.
 #'
-#' Requires the yaml12 and nanoparquet packages.
+#' @section Data files:
+#' A table's data is read from the Parquet file named by its `source` in the
+#' dictionary. Tables without a `source`, such as those from
+#' [grist_export()] with `format = "csv"` or `"json"`, are read from
+#' `<table>.parquet`, `<table>.csv` or `<table>.json` next to the dictionary,
+#' in that order, or the one `format` names.
+#'
+#' Text files have no types of their own, so values are converted to the types
+#' in the dictionary (dates as `YYYY-MM-DD`, date-times as ISO 8601 in UTC,
+#' list columns as JSON arrays). A `number` column becomes `Int` when all of
+#' its values are whole, so a `Numeric` column of whole numbers needs
+#' `types = c("Table.column" = "Numeric")`.
+#'
+#' Requires the yaml12 package, and the nanoparquet package for Parquet files.
 #'
 #' @inheritParams grist_records
 #' @param from Path to a `data-dict.yaml` file, or to a directory containing
@@ -52,6 +65,8 @@
 #'   `"Ref:People"` or `"RefList:Items"`.
 #' @param display A named character vector choosing the column a `Ref` or
 #'   `RefList` column shows, e.g. `c("Orders.person" = "name")`.
+#' @param format The format of the data files: `"auto"` uses whichever is
+#'   found, or `"parquet"`, `"csv"` or `"json"` to choose.
 #' @param orphans What to do with references to a key that doesn't exist in
 #'   the target table: stop with an `"error"` before changing anything, or
 #'   leave the reference `"empty"`.
@@ -80,6 +95,7 @@ grist_import <- function(
   tables = NULL,
   types = NULL,
   display = NULL,
+  format = c("auto", "parquet", "csv", "json"),
   orphans = c("error", "empty"),
   if_exists = c("error", "append"),
   options = NULL
@@ -89,14 +105,14 @@ grist_import <- function(
   check_character(tables, allow_null = TRUE)
   check_named_strings(types)
   check_named_strings(display)
+  format <- arg_match(format)
   orphans <- arg_match(orphans)
   if_exists <- arg_match(if_exists)
   options <- as_write_options(options)
-  check_nanoparquet()
 
   dict <- read_data_dict(from)
   plan <- import_plan(dict, tables, types, display)
-  data <- map(plan$tables, read_import_data, dir = dict$dir)
+  data <- map(plan$tables, read_import_data, dir = dict$dir, format = format)
   names(data) <- names(plan$tables)
   check_import_data(plan, data)
 
@@ -349,6 +365,7 @@ import_plan <- function(dict, tables, types, display, call = caller_env()) {
     list(
       name = table,
       source = specs[[table]]$source$parquet,
+      all_columns = columns_of(table),
       columns = described,
       fk_columns = names(cols)[
         paste(table, names(cols), sep = ".") %in% names(fks)
@@ -364,27 +381,40 @@ import_plan <- function(dict, tables, types, display, call = caller_env()) {
   list(tables = plan_tables, fks = fks)
 }
 
-read_import_data <- function(spec, dir, call = caller_env()) {
-  if (is.null(spec$source)) {
-    cli::cli_abort(
-      "Table {.val {spec$name}} has no {.field source} with a Parquet file.",
-      call = call
-    )
-  }
-  path <- file.path(dir, spec$source)
-  if (!file.exists(path)) {
-    cli::cli_abort(
-      "Can't find the Parquet file for table {.val {spec$name}}: {.path {path}}.",
-      call = call
-    )
-  }
-  data <- as.data.frame(nanoparquet::read_parquet(path))
-  for (nm in names(data)) {
-    if (is.factor(data[[nm]])) {
-      data[[nm]] <- as.character(data[[nm]])
+# Find a table's file: the dictionary's Parquet `source` if it has one,
+# otherwise `<table>.<format>` next to the dictionary.
+find_table_file <- function(spec, dir, format) {
+  if (format %in% c("auto", "parquet") && !is.null(spec$source)) {
+    path <- file.path(dir, spec$source)
+    if (file.exists(path)) {
+      return(list(path = path, format = "parquet"))
     }
   }
-  data
+  formats <- if (format == "auto") c("parquet", "csv", "json") else format
+  for (fmt in formats) {
+    path <- file.path(dir, paste0(spec$name, ".", fmt))
+    if (file.exists(path)) {
+      return(list(path = path, format = fmt))
+    }
+  }
+  NULL
+}
+
+read_import_data <- function(spec, dir, format, call = caller_env()) {
+  found <- find_table_file(spec, dir, format)
+  if (is.null(found)) {
+    cli::cli_abort(
+      c(
+        "Can't find a data file for table {.val {spec$name}}.",
+        i = "Looked for a Parquet {.field source} in the dictionary and for {.file {spec$name}.{c('parquet', 'csv', 'json')}} in {.path {dir}}."
+      ),
+      call = call
+    )
+  }
+  if (found$format == "parquet") {
+    check_nanoparquet(call)
+  }
+  read_table_file(found$path, found$format, spec$all_columns)
 }
 
 check_import_data <- function(plan, data, call = caller_env()) {
@@ -531,7 +561,8 @@ check_orphans <- function(plan, data, keys, orphans, call = caller_env()) {
   for (fk in plan$fks) {
     values <- unlist(data[[fk$table]][[fk$column]], use.names = FALSE)
     known <- data[[fk$target]][[keys[[fk$target]]]]
-    bad <- unique(values[!is.na(values) & !values %in% known])
+    values <- values[!is.na(values) & values != ""]
+    bad <- unique(values[!values %in% known])
     if (length(bad) > 0) {
       shown <- utils::head(bad, 5)
       cli::cli_abort(
@@ -556,13 +587,13 @@ map_references <- function(x, lookup) {
   }
   if (is.list(x)) {
     return(map(x, function(cell) {
-      cell <- cell[!is.na(cell)]
+      cell <- cell[!is.na(cell) & cell != ""]
       ids <- lookup_one(cell)
       ids[ids != 0L]
     }))
   }
   out <- lookup_one(x)
-  out[is.na(x)] <- 0L
+  out[is.na(x) | x == ""] <- 0L
   out
 }
 

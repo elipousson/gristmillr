@@ -185,3 +185,153 @@ write_data_dict <- function(dict, file) {
   yaml <- gsub("(?m)^(\\s+- )(-?)inf$", "\\1\\2.inf", yaml, perl = TRUE)
   writeLines(yaml, file)
 }
+
+# Table files ---------------------------------------------------------------
+
+# Dates and date-times as ISO 8601 text. Instants are written in UTC so they are
+# unambiguous; the dictionary's `time_zone` says how to display them.
+as_text_columns <- function(data) {
+  data <- as.data.frame(data)
+  for (nm in names(data)) {
+    x <- data[[nm]]
+    if (is.factor(x)) {
+      data[[nm]] <- as.character(x)
+    } else if (inherits(x, "Date")) {
+      data[[nm]] <- iso_date(x)
+    } else if (inherits(x, "POSIXt")) {
+      data[[nm]] <- format(x, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+    }
+  }
+  data
+}
+
+write_table_file <- function(data, path, format) {
+  switch(
+    format,
+    parquet = nanoparquet::write_parquet(as.data.frame(data), path),
+    json = jsonlite::write_json(
+      as_text_columns(data),
+      path,
+      dataframe = "rows",
+      na = "null",
+      digits = NA,
+      pretty = TRUE
+    ),
+    csv = {
+      data <- as_text_columns(data)
+      for (nm in names(data)) {
+        if (is.list(data[[nm]])) {
+          data[[nm]] <- map_chr(data[[nm]], function(cell) {
+            as.character(jsonlite::toJSON(cell, digits = NA))
+          })
+        }
+      }
+      utils::write.csv(
+        data,
+        path,
+        row.names = FALSE,
+        na = "",
+        fileEncoding = "UTF-8"
+      )
+    }
+  )
+}
+
+# Read a table file. Text formats come back as plain text or JSON values, so
+# `coerce_table()` gives them the types in the dictionary.
+read_table_file <- function(path, format, columns) {
+  switch(
+    format,
+    parquet = {
+      data <- as.data.frame(nanoparquet::read_parquet(path))
+      for (nm in names(data)) {
+        if (is.factor(data[[nm]])) {
+          data[[nm]] <- as.character(data[[nm]])
+        }
+      }
+      data
+    },
+    json = {
+      data <- jsonlite::fromJSON(path, simplifyVector = TRUE)
+      if (length(data) == 0) {
+        data <- as.data.frame(
+          stats::setNames(
+            rep(list(character()), length(columns)),
+            names(columns)
+          ),
+          check.names = FALSE
+        )
+      }
+      coerce_table(as.data.frame(data), columns)
+    },
+    csv = {
+      data <- utils::read.csv(
+        path,
+        colClasses = "character",
+        na.strings = "",
+        check.names = FALSE,
+        fileEncoding = "UTF-8",
+        encoding = "UTF-8"
+      )
+      coerce_table(data, columns)
+    }
+  )
+}
+
+# Give each column the R type its dictionary entry describes.
+coerce_table <- function(data, columns) {
+  for (nm in intersect(names(columns), names(data))) {
+    data[[nm]] <- coerce_column(data[[nm]], columns[[nm]]$type)
+  }
+  data
+}
+
+coerce_column <- function(x, type) {
+  if (is.null(type)) {
+    return(x)
+  }
+  base <- sub("^list\\((.*)\\)$", "\\1", type)
+  if (grepl("^list\\(", type)) {
+    parse_cell <- function(cell) {
+      if (is.character(cell) && length(cell) == 1 && grepl("^\\s*\\[", cell)) {
+        cell <- jsonlite::fromJSON(cell, simplifyVector = TRUE)
+      }
+      if (is.null(cell) || length(cell) == 0 || all(is.na(cell))) {
+        return(if (grepl("^number", base)) integer() else character())
+      }
+      if (grepl("^number", base)) as.integer(cell) else as.character(cell)
+    }
+    return(map(x, function(cell) {
+      parse_cell(if (is.list(cell)) unlist(cell) else cell)
+    }))
+  }
+  switch(
+    sub("\\(.*$", "", base),
+    string = ,
+    enum = {
+      x <- as.character(x)
+      x[is.na(x)] <- ""
+      x
+    },
+    number = {
+      x <- as.numeric(x)
+      whole <- all(is.na(x) | (is.finite(x) & x == round(x) & abs(x) < 2^31))
+      if (whole) as.integer(x) else x
+    },
+    boolean = {
+      if (!is.logical(x)) {
+        missing <- is.na(x)
+        x <- toupper(as.character(x)) == "TRUE"
+        x[missing] <- NA
+      }
+      x
+    },
+    date = as.Date(as.character(x), format = "%Y-%m-%d"),
+    datetime = as.POSIXct(
+      as.character(x),
+      format = "%Y-%m-%dT%H:%M:%OSZ",
+      tz = "UTC"
+    ),
+    x
+  )
+}

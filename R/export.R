@@ -1,8 +1,8 @@
-#' Export a document's tables to Parquet files and a data dictionary
+#' Export a document's tables to files and a data dictionary
 #'
 #' @description
-#' `grist_export()` writes each table of a document to a Parquet file in a
-#' directory, and describes the tables in a `data-dict.yaml` file following the
+#' `grist_export()` writes each table of a document to a Parquet, CSV or JSON
+#' file in a directory, and describes the tables in a `data-dict.yaml` file following the
 #' [data-dict](https://data-dict.tidyverse.org/) specification. The result can
 #' be read by other tools, or loaded into another Grist document with
 #' [grist_import()].
@@ -22,11 +22,23 @@
 #'   exported as values, not formulas.
 #' * Columns of type `Any` are listed by name only.
 #'
-#' Requires the yaml12 and nanoparquet packages.
+#' @section File formats:
+#' `"parquet"` keeps every type, including time zones and list columns, and is
+#' the default. `"json"` keeps numbers, logicals, missing values and list
+#' columns, and writes dates and date-times as ISO 8601 text (date-times in
+#' UTC). `"csv"` is plain text: list columns are written as JSON arrays,
+#' and an empty `Text` cell can't be told apart from a missing one.
+#'
+#' data-dict can only point at Parquet files with `source`, so for CSV and
+#' JSON the dictionary has no `source`, and files are found by name
+#' (`<table>.csv` or `<table>.json`) next to the dictionary.
+#'
+#' Requires the yaml12 package, and the nanoparquet package for Parquet.
 #'
 #' @inheritParams grist_records
 #' @param to Directory to write to. It is created if it doesn't exist.
 #' @param tables Table IDs to export. `NULL` exports every table.
+#' @param format File format for the tables: `"parquet"`, `"csv"` or `"json"`.
 #' @param examples data-dict describes the values of each column. `"sample"`
 #'   records up to five real example values (or the range of dates) from the
 #'   data. `"none"` leaves them empty with a `todo`, so no data appears in the
@@ -46,16 +58,20 @@ grist_export <- function(
   doc,
   to = ".",
   tables = NULL,
+  format = c("parquet", "csv", "json"),
   examples = c("sample", "none"),
   overwrite = FALSE
 ) {
   doc <- grist_doc(doc)
   check_string(to)
   check_character(tables, allow_null = TRUE)
+  format <- arg_match(format)
   examples <- arg_match(examples)
   check_bool(overwrite)
   check_yaml12()
-  check_nanoparquet()
+  if (format == "parquet") {
+    check_nanoparquet()
+  }
 
   available <- grist_tables(doc)$id
   available <- available[!startsWith(available, "GristSummary_")]
@@ -71,7 +87,7 @@ grist_export <- function(
     )
   }
 
-  files <- file.path(to, c(paste0(tables, ".parquet"), "data-dict.yaml"))
+  files <- file.path(to, c(paste0(tables, ".", format), "data-dict.yaml"))
   existing <- files[file.exists(files)]
   if (length(existing) > 0 && !overwrite) {
     cli::cli_abort(
@@ -93,10 +109,10 @@ grist_export <- function(
     columns <- grist_columns(doc, table)
     data <- grist_records(doc, table, options = read_options)
 
-    path <- file.path(to, paste0(table, ".parquet"))
-    nanoparquet::write_parquet(as.data.frame(data), path)
+    path <- file.path(to, paste0(table, ".", format))
+    write_table_file(data, path, format)
 
-    described <- dict_table(table, columns, data, tables, examples)
+    described <- dict_table(table, columns, data, tables, examples, format)
     dict_tables[[length(dict_tables) + 1]] <- described$table
     relationships <- c(relationships, described$relationships)
     summary[[length(summary) + 1]] <- list(
@@ -139,7 +155,7 @@ grist_export <- function(
 }
 
 # Describe one table: its data-dict entry and the relationships it declares.
-dict_table <- function(table, columns, data, exported, examples) {
+dict_table <- function(table, columns, data, exported, examples, format) {
   id_column <- c(
     list(
       name = "id",
@@ -181,12 +197,13 @@ dict_table <- function(table, columns, data, exported, examples) {
     c(col, dict_values(data[[id]], dtype, examples))
   })
 
-  list(
-    table = list(
-      name = table,
-      source = list(parquet = paste0(table, ".parquet")),
-      columns = c(list(id_column), cols)
-    ),
-    relationships = relationships
-  )
+  # data-dict can only point at Parquet sources. Other formats are found by
+  # file name, `<table>.<format>`, next to the dictionary.
+  described <- list(name = table)
+  if (format == "parquet") {
+    described$source <- list(parquet = paste0(table, ".parquet"))
+  }
+  described$columns <- c(list(id_column), cols)
+
+  list(table = described, relationships = relationships)
 }

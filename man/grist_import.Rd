@@ -2,7 +2,7 @@
 % Please edit documentation in R/import.R
 \name{grist_import}
 \alias{grist_import}
-\title{Import tables from Parquet files and a data dictionary}
+\title{Import tables from files and a data dictionary}
 \usage{
 grist_import(
   doc,
@@ -10,6 +10,7 @@ grist_import(
   tables = NULL,
   types = NULL,
   display = NULL,
+  format = c("auto", "parquet", "csv", "json"),
   orphans = c("error", "empty"),
   if_exists = c("error", "append"),
   options = NULL
@@ -32,6 +33,9 @@ Names are \code{"Table.column"}, values are Grist types such as \code{"Numeric"}
 \item{display}{A named character vector choosing the column a \code{Ref} or
 \code{RefList} column shows, e.g. \code{c("Orders.person" = "name")}.}
 
+\item{format}{The format of the data files: \code{"auto"} uses whichever is
+found, or \code{"parquet"}, \code{"csv"} or \code{"json"} to choose.}
+
 \item{orphans}{What to do with references to a key that doesn't exist in
 the target table: stop with an \code{"error"} before changing anything, or
 leave the reference \code{"empty"}.}
@@ -50,7 +54,7 @@ already created remain in the document.
 \description{
 \code{grist_import()} creates tables in a document from a
 \href{https://data-dict.tidyverse.org/}{data-dict} \code{data-dict.yaml} file and the
-Parquet files it points to, then loads the rows. It is the counterpart of
+Parquet, CSV or JSON files that hold the data, then loads the rows. It is the counterpart of
 \code{\link[=grist_export]{grist_export()}}, and also suits data prepared elsewhere, such as lists
 copied out of another low-code tool.
 }
@@ -89,8 +93,23 @@ target table must have a \code{primary_key} column, whose values the list holds.
 
 A \code{Ref} column shows its target's row ID unless you choose a column to show
 with \code{display}.
+}
 
-Requires the yaml12 and nanoparquet packages.
+\section{Data files}{
+
+A table's data is read from the Parquet file named by its \code{source} in the
+dictionary. Tables without a \code{source}, such as those from
+\code{\link[=grist_export]{grist_export()}} with \code{format = "csv"} or \code{"json"}, are read from
+\verb{<table>.parquet}, \verb{<table>.csv} or \verb{<table>.json} next to the dictionary,
+in that order, or the one \code{format} names.
+
+Text files have no types of their own, so values are converted to the types
+in the dictionary (dates as \code{YYYY-MM-DD}, date-times as ISO 8601 in UTC,
+list columns as JSON arrays). A \code{number} column becomes \code{Int} when all of
+its values are whole, so a \code{Numeric} column of whole numbers needs
+\code{types = c("Table.column" = "Numeric")}.
+
+Requires the yaml12 package, and the nanoparquet package for Parquet files.
 }
 
 \examples{

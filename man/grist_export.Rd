@@ -2,12 +2,13 @@
 % Please edit documentation in R/export.R
 \name{grist_export}
 \alias{grist_export}
-\title{Export a document's tables to Parquet files and a data dictionary}
+\title{Export a document's tables to files and a data dictionary}
 \usage{
 grist_export(
   doc,
   to = ".",
   tables = NULL,
+  format = c("parquet", "csv", "json"),
   examples = c("sample", "none"),
   overwrite = FALSE
 )
@@ -19,6 +20,8 @@ grist_export(
 \item{to}{Directory to write to. It is created if it doesn't exist.}
 
 \item{tables}{Table IDs to export. \code{NULL} exports every table.}
+
+\item{format}{File format for the tables: \code{"parquet"}, \code{"csv"} or \code{"json"}.}
 
 \item{examples}{data-dict describes the values of each column. \code{"sample"}
 records up to five real example values (or the range of dates) from the
@@ -32,8 +35,8 @@ A data frame with one row per exported table: \code{table}, \code{rows},
 \code{columns} and \code{path}, invisibly.
 }
 \description{
-\code{grist_export()} writes each table of a document to a Parquet file in a
-directory, and describes the tables in a \code{data-dict.yaml} file following the
+\code{grist_export()} writes each table of a document to a Parquet, CSV or JSON
+file in a directory, and describes the tables in a \code{data-dict.yaml} file following the
 \href{https://data-dict.tidyverse.org/}{data-dict} specification. The result can
 be read by other tools, or loaded into another Grist document with
 \code{\link[=grist_import]{grist_import()}}.
@@ -55,8 +58,21 @@ so no relationship is recorded for them.
 exported as values, not formulas.
 \item Columns of type \code{Any} are listed by name only.
 }
+}
 
-Requires the yaml12 and nanoparquet packages.
+\section{File formats}{
+
+\code{"parquet"} keeps every type, including time zones and list columns, and is
+the default. \code{"json"} keeps numbers, logicals, missing values and list
+columns, and writes dates and date-times as ISO 8601 text (date-times in
+UTC). \code{"csv"} is plain text: list columns are written as JSON arrays,
+and an empty \code{Text} cell can't be told apart from a missing one.
+
+data-dict can only point at Parquet files with \code{source}, so for CSV and
+JSON the dictionary has no \code{source}, and files are found by name
+(\verb{<table>.csv} or \verb{<table>.json}) next to the dictionary.
+
+Requires the yaml12 package, and the nanoparquet package for Parquet.
 }
 
 \examples{

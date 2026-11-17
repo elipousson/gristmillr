@@ -40,12 +40,12 @@
   (`by`), with `mode` and `onmany` enums. It never deletes records.
 * `grist_records()` no longer fails on an empty table with untyped (`Any`)
   columns.
-* `grist_export()` writes a document's tables to Parquet files and a
+* `grist_export()` writes a document's tables to Parquet, CSV or JSON files and a
   [data-dict](https://data-dict.tidyverse.org/) `data-dict.yaml` that records
   column types, descriptions and references. `grist_import()` creates tables
-  from such a dictionary, converting foreign keys to `Ref` columns, and can
-  load data prepared outside Grist. Both need the yaml12 and nanoparquet
-  packages.
+  from such a dictionary and its data files, converting foreign keys to `Ref`
+  columns, and can load data prepared outside Grist. Both need the yaml12
+  package, and nanoparquet for Parquet files.
 * `vignette("migrating-data")` explains how to move tables in and out of Grist
   with `grist_export()` and `grist_import()`.
 * `grist_doc_import()` creates a document from a `.grist`, `.csv`, `.xlsx` or

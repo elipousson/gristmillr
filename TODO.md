@@ -41,6 +41,51 @@ descriptions, history, export and import.
 - [ ] A `gristapi` migration vignette. The README has a short function table.
   `grist_records_upsert()` is the equivalent of `sync_table()`.
 
+## Records API redesign
+
+Make the record writes data-first and type-stable, modelled on dplyr's
+`rows_*()`: the first argument is the thing the function returns, so a data
+frame can be piped in and comes back. `grist_resolve_refs()` already works this
+way. Schema, read and document functions stay doc-first. Do this as one pass
+that also updates the README, vignettes, examples and tests, and run the live
+tests.
+
+- [ ] `grist_records_add(data, doc, table, ...)` returns `data` with the new
+  `id` column filled in, invisibly.
+- [ ] `grist_records_insert(data, doc, table, by, ...)` adds rows whose `by`
+  key isn't in the table and skips the rest (`rows_insert(conflict = "ignore")`,
+  `PUT` with `noupdate`). Grist doesn't report which rows were skipped.
+- [ ] `grist_records_update(data, doc, table, by = "id", unmatched = c("error",
+  "ignore"), multiple, ...)`. `by = "id"` uses `PATCH`, where Grist errors on a
+  missing row. Other `by` columns use `PUT` with `noadd`, which can only
+  `"ignore"` unmatched rows, so `unmatched = "error"` isn't allowed there.
+  Document this rather than pre-reading the table, which would be an extra
+  request and racy.
+- [ ] `grist_records_upsert(data, doc, table, by, multiple, ...)`.
+- [ ] `grist_records_delete(data, doc, table, ...)`: `data` is a data frame
+  with an `id` column or a vector of IDs, returned unchanged, invisibly.
+  Deletes by row ID only.
+- [ ] Rename `onmany` to `multiple` (`"first"`, `"all"`, `"none"`), after
+  `left_join(multiple = )`.
+- [ ] Drop `mode` from `grist_records_upsert()`, which `grist_records_insert()`
+  and the `unmatched` argument of `grist_records_update()` replace.
+- [ ] Decide return values for the schema and document functions in the same
+  pass. They should follow the same rule, and `grist_workspace_*()` return an
+  ID where `grist_doc_*()` return a handle.
+
+## Booleans to review
+
+Prefer an enum to a flag
+([design guide](https://design.tidyverse.org/boolean-strategies.html)) when an
+argument can plausibly take more values or only makes sense with another
+argument.
+
+- [ ] `no_history` and `template` in `grist_doc_download()` are two flags that
+  only apply to `format = "grist"`, and `template` implies no history. A single
+  enum such as `content = c("full", "no_history", "template")` fits better.
+- `overwrite` and `parse` are probably fine as logicals. `hidden`, `raw`,
+  `pinned` and `enabled` are plain on/off switches.
+
 ## Out of scope
 
 These stay reachable through `grist_request()`: SCIM and user admin, access

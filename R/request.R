@@ -52,7 +52,7 @@ store_api_key <- function(api_key, call = caller_env()) {
   if (inherits(api_key, "gristmillr_key_ref")) {
     return(api_key)
   }
-  if (!is_string(api_key)) {
+  if (!is_nonempty_string(api_key)) {
     cli::cli_abort(
       "{.arg api_key} must be a string or a function that returns one, not {.obj_type_friendly {api_key}}.",
       call = call
@@ -68,7 +68,7 @@ grist_api_key <- function(options, call = caller_env()) {
 
   if (is.function(key)) {
     value <- key()
-    if (!is_string(value)) {
+    if (!is_nonempty_string(value)) {
       cli::cli_abort(
         "The {.arg api_key} function must return a single string, not {.obj_type_friendly {value}}.",
         class = "gristmillr_no_api_key",

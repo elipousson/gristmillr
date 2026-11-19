@@ -96,7 +96,7 @@ grist_doc <- new_class(
     )
   },
   validator = function(self) {
-    if (!is_string(self@doc_id)) {
+    if (!is_nonempty_string(self@doc_id)) {
       return("@doc_id must be a single non-empty string.")
     }
     if (grepl("[/?#[:space:]]", self@doc_id)) {

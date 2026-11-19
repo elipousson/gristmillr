@@ -73,7 +73,7 @@ grist_request_options <- new_class(
     if (!is_scalar_number(self@max_tries) || self@max_tries < 1) {
       return("@max_tries must be a single number >= 1.")
     }
-    if (!is_string(self@user_agent)) {
+    if (!is_nonempty_string(self@user_agent)) {
       return("@user_agent must be a single string.")
     }
     if (
@@ -133,13 +133,13 @@ grist_read_options <- new_class(
     if (!is_bool(self@hidden)) {
       return("@hidden must be `TRUE` or `FALSE`.")
     }
-    if (!is_string(self@cell_format, c("normal", "typed"))) {
+    if (!is_nonempty_string(self@cell_format, c("normal", "typed"))) {
       return('@cell_format must be "normal" or "typed".')
     }
-    if (!is.null(self@tz) && !is_string(self@tz)) {
+    if (!is.null(self@tz) && !is_nonempty_string(self@tz)) {
       return("@tz must be `NULL` or a single string.")
     }
-    if (!is_string(self@col_names, c("id", "label"))) {
+    if (!is_nonempty_string(self@col_names, c("id", "label"))) {
       return('@col_names must be "id" or "label".')
     }
     NULL
@@ -171,7 +171,7 @@ grist_write_options <- new_class(
     if (!is_scalar_number(self@chunk_size) || self@chunk_size < 1) {
       return("@chunk_size must be a single number >= 1.")
     }
-    if (!is_string(self@unknown_cols, c("error", "drop"))) {
+    if (!is_nonempty_string(self@unknown_cols, c("error", "drop"))) {
       return('@unknown_cols must be "error" or "drop".')
     }
     if (!is_bool(self@parse)) {
@@ -245,7 +245,8 @@ is_scalar_number <- function(x) {
   is.numeric(x) && length(x) == 1 && !is.na(x)
 }
 
-is_string <- function(x, values = NULL) {
+# Unlike `rlang::is_string()`, this rejects `""`.
+is_nonempty_string <- function(x, values = NULL) {
   ok <- is.character(x) && length(x) == 1 && !is.na(x) && nzchar(x)
   ok && (is.null(values) || x %in% values)
 }

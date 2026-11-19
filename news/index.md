@@ -2,6 +2,11 @@
 
 ## gristmillr 0.0.0.9000
 
+- [`grist_write_options()`](https://elipousson.github.io/gristmillr/reference/grist-options.md)
+  gains `parse`. Set `parse = FALSE` to send `noparse=true` and store
+  values as sent instead of letting Grist parse them to match column
+  types.
+
 - [`grist_workspaces()`](https://elipousson.github.io/gristmillr/reference/grist_orgs.md),
   [`grist_docs()`](https://elipousson.github.io/gristmillr/reference/grist_orgs.md)
   and

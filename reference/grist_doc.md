@@ -18,7 +18,8 @@ grist_doc(doc, server = NULL, options = NULL, api_key = NULL)
 - doc:
 
   A document ID, the URL of a document, or an existing `grist_doc`
-  object.
+  object. An existing object is returned as it is, with a warning if
+  `server`, `options` or `api_key` are also supplied.
 
 - server:
 

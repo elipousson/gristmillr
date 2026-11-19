@@ -62,17 +62,20 @@ several requests (see <code><a href="grist-options.html">grist_write_options()</
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">grist_records_add</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
 <span>  <span class="va">doc</span>,</span>
 <span>  <span class="va">table</span>,</span>
-<span>  <span class="va">data</span>,</span>
 <span>  convert <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"basic"</span>, <span class="st">"raw"</span><span class="op">)</span>,</span>
 <span>  options <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">grist_records_update</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
 <span>  <span class="va">doc</span>,</span>
 <span>  <span class="va">table</span>,</span>
-<span>  <span class="va">data</span>,</span>
+<span>  by <span class="op">=</span> <span class="st">"id"</span>,</span>
+<span>  unmatched <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"ignore"</span><span class="op">)</span>,</span>
+<span>  multiple <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"first"</span>, <span class="st">"all"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  convert <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"basic"</span>, <span class="st">"raw"</span><span class="op">)</span>,</span>
 <span>  options <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
@@ -88,7 +91,7 @@ several requests (see <code><a href="grist-options.html">grist_write_options()</
 <span>  options <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">grist_records_delete</span><span class="op">(</span><span class="va">doc</span>, <span class="va">table</span>, <span class="va">ids</span>, options <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">grist_records_delete</span><span class="op">(</span><span class="va">data</span>, <span class="va">doc</span>, <span class="va">table</span>, options <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -132,16 +135,35 @@ for the writing functions). If <code>NULL</code>, the default set with
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A data frame of records. For <code>grist_records_add()</code>, each column
-must be a column of the Grist table. For <code>grist_records_update()</code>, <code>data</code>
-must also have an integer <code>id</code> column.</p></dd>
+<dd><p>A data frame of records, which comes first so that it can be
+piped in. Each column must be a column of the Grist table. For
+<code>grist_records_update()</code>, <code>data</code> must also have an integer <code>id</code> column. For
+<code>grist_records_delete()</code>, <code>data</code> is a data frame with an <code>id</code> column (such
+as the result of <code>grist_records()</code>) or a vector of row IDs.</p></dd>
 
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
-<dd><p>Character vector of columns that identify a record, such as
-<code>"email"</code>. Each row of <code>data</code> is matched against the table on these
-columns. <code>data</code> must contain them, with no missing values and no
-duplicated combinations.</p></dd>
+<dd><p>Columns that identify a record. For <code>grist_records_update()</code> the
+default, <code>"id"</code>, updates the rows whose row IDs are in <code>data$id</code>. Otherwise
+<code>by</code> is a character vector of columns, such as <code>"email"</code>, and each row of
+<code>data</code> is matched against the table on these columns. <code>data</code> must contain
+them, with no missing values and no duplicated combinations, and no <code>id</code>
+column.</p></dd>
+
+
+<dt id="arg-unmatched">unmatched<a class="anchor" aria-label="anchor" href="#arg-unmatched"></a></dt>
+<dd><p>What to do with a row of <code>data</code> that matches no record in
+the table. Grist's two ways to update records support one value each:
+<code>"error"</code> when <code>by = "id"</code>, because Grist errors on a row ID that doesn't
+exist, and <code>"ignore"</code> when <code>by</code> is another column, because Grist skips
+rows with no match and doesn't report which. A call that asks for the
+other value is an error, so key-based updates need <code>unmatched = "ignore"</code>.</p></dd>
+
+
+<dt id="arg-multiple">multiple<a class="anchor" aria-label="anchor" href="#arg-multiple"></a></dt>
+<dd><p>What to do when several records in the table match one row of
+<code>data</code>: update the <code>"first"</code> one, update <code>"all"</code> of them, or update
+<code>"none"</code> of them. Only used when <code>by</code> is not <code>"id"</code>.</p></dd>
 
 
 <dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
@@ -157,19 +179,14 @@ Grist does not report which rows were skipped.</p></dd>
 of <code>data</code>: update the <code>"first"</code> one, update <code>"all"</code> of them, or update
 <code>"none"</code> of them.</p></dd>
 
-
-<dt id="arg-ids">ids<a class="anchor" aria-label="anchor" href="#arg-ids"></a></dt>
-<dd><p>Row IDs to delete, either an integer vector or a data frame with
-an <code>id</code> column (such as the result of <code>grist_records()</code>).</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>grist_records()</code> returns a data frame whose first column <code>id</code> is
-the row ID. <code>grist_records_add()</code> returns the new row IDs.
-<code>grist_records_update()</code>, <code>grist_records_upsert()</code> and
-<code>grist_records_delete()</code> return <code>doc</code>. All but <code>grist_records()</code> return
-invisibly.</p>
+the row ID. <code>grist_records_add()</code> returns <code>data</code> with a new first column
+<code>id</code> holding the row IDs Grist assigned. <code>grist_records_delete()</code> returns
+<code>data</code> unchanged. <code>grist_records_update()</code> and <code>grist_records_upsert()</code>
+return <code>doc</code>. All but <code>grist_records()</code> return invisibly.</p>
     </div>
     <div class="section level2">
     <h2 id="type-conversion">Type conversion<a class="anchor" aria-label="anchor" href="#type-conversion"></a></h2>
@@ -213,15 +230,22 @@ column is read back as <code>FALSE</code>. Empty <code>Int</code>, <code>Numeric
 <span class="r-in"><span><span class="fu">grist_records</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">grist_records</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>pet <span class="op">=</span> <span class="st">"cat"</span><span class="op">)</span>, sort <span class="op">=</span> <span class="st">"-popularity"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Data comes first, so it can be piped in. The result has the new row IDs.</span></span></span>
 <span class="r-in"><span><span class="va">new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>pet <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cat"</span>, <span class="st">"dog"</span><span class="op">)</span>, popularity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">67L</span>, <span class="fl">95L</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu">grist_records_add</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span>, <span class="va">new</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">added</span> <span class="op">&lt;-</span> <span class="va">new</span> <span class="op">|&gt;</span> <span class="fu">grist_records_add</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">grist_records_update</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="va">ids</span>, popularity <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="va">added</span><span class="op">$</span><span class="va">id</span>, popularity <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">grist_records_update</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Match on a column. Grist skips rows that match nothing.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>pet <span class="op">=</span> <span class="st">"cat"</span>, popularity <span class="op">=</span> <span class="fl">70L</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">grist_records_update</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span>, by <span class="op">=</span> <span class="st">"pet"</span>, unmatched <span class="op">=</span> <span class="st">"ignore"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Match on a column instead of the row ID: update cats, add rabbits</span></span></span>
 <span class="r-in"><span><span class="va">pets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>pet <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cat"</span>, <span class="st">"rabbit"</span><span class="op">)</span>, popularity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">70L</span>, <span class="fl">40L</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">grist_records_upsert</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span>, <span class="va">pets</span>, by <span class="op">=</span> <span class="st">"pet"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">grist_records_delete</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span>, <span class="va">ids</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">added</span> <span class="op">|&gt;</span> <span class="fu">grist_records_delete</span><span class="op">(</span><span class="va">doc</span>, <span class="st">"Pets"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>

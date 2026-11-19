@@ -74,7 +74,11 @@ as <code><a href="grist_records.html">grist_records()</a></code> keep short sign
 <span>  col_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"label"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">grist_write_options</span><span class="op">(</span>chunk_size <span class="op">=</span> <span class="fl">500</span>, unknown_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"drop"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">grist_write_options</span><span class="op">(</span></span>
+<span>  chunk_size <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  unknown_cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"error"</span>, <span class="st">"drop"</span><span class="op">)</span>,</span>
+<span>  parse <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -131,6 +135,14 @@ Grist column IDs (<code>"id"</code>) or column labels (<code>"label"</code>).</p
 the Grist table: <code>"error"</code> or silently <code>"drop"</code> them. Only checked when
 <code>convert = "auto"</code>, because other modes do not fetch column metadata.</p></dd>
 
+
+<dt id="arg-parse">parse<a class="anchor" aria-label="anchor" href="#arg-parse"></a></dt>
+<dd><p>If <code>TRUE</code> (the default), Grist parses string values to match
+the type of each column, e.g. <code>"123"</code> becomes <code>123</code> in a numeric column.
+If <code>FALSE</code>, values are stored as sent (<code>noparse=true</code>). Values that don't
+fit a column's type are never rejected: Grist stores them as-is and flags
+them as invalid.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -155,6 +167,7 @@ the Grist table: <code>"error"</code> or silently <code>"drop"</code> them. Only
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;gristmillr::grist_write_options&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  @ chunk_size  : num 250</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  @ unknown_cols: chr "error"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  @ parse       : logi TRUE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

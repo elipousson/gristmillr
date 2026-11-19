@@ -19,17 +19,20 @@ grist_records(
 )
 
 grist_records_add(
+  data,
   doc,
   table,
-  data,
   convert = c("auto", "basic", "raw"),
   options = NULL
 )
 
 grist_records_update(
+  data,
   doc,
   table,
-  data,
+  by = "id",
+  unmatched = c("error", "ignore"),
+  multiple = c("first", "all", "none"),
   convert = c("auto", "basic", "raw"),
   options = NULL
 )
@@ -45,7 +48,7 @@ grist_records_upsert(
   options = NULL
 )
 
-grist_records_delete(doc, table, ids, options = NULL)
+grist_records_delete(data, doc, table, options = NULL)
 ```
 
 ## Arguments
@@ -92,16 +95,36 @@ grist_records_delete(doc, table, ids, options = NULL)
 
 - data:
 
-  A data frame of records. For `grist_records_add()`, each column must
-  be a column of the Grist table. For `grist_records_update()`, `data`
-  must also have an integer `id` column.
+  A data frame of records, which comes first so that it can be piped in.
+  Each column must be a column of the Grist table. For
+  `grist_records_update()`, `data` must also have an integer `id`
+  column. For `grist_records_delete()`, `data` is a data frame with an
+  `id` column (such as the result of `grist_records()`) or a vector of
+  row IDs.
 
 - by:
 
-  Character vector of columns that identify a record, such as `"email"`.
-  Each row of `data` is matched against the table on these columns.
+  Columns that identify a record. For `grist_records_update()` the
+  default, `"id"`, updates the rows whose row IDs are in `data$id`.
+  Otherwise `by` is a character vector of columns, such as `"email"`,
+  and each row of `data` is matched against the table on these columns.
   `data` must contain them, with no missing values and no duplicated
-  combinations.
+  combinations, and no `id` column.
+
+- unmatched:
+
+  What to do with a row of `data` that matches no record in the table.
+  Grist's two ways to update records support one value each: `"error"`
+  when `by = "id"`, because Grist errors on a row ID that doesn't exist,
+  and `"ignore"` when `by` is another column, because Grist skips rows
+  with no match and doesn't report which. A call that asks for the other
+  value is an error, so key-based updates need `unmatched = "ignore"`.
+
+- multiple:
+
+  What to do when several records in the table match one row of `data`:
+  update the `"first"` one, update `"all"` of them, or update `"none"`
+  of them. Only used when `by` is not `"id"`.
 
 - mode:
 
@@ -117,17 +140,13 @@ grist_records_delete(doc, table, ids, options = NULL)
   update the `"first"` one, update `"all"` of them, or update `"none"`
   of them.
 
-- ids:
-
-  Row IDs to delete, either an integer vector or a data frame with an
-  `id` column (such as the result of `grist_records()`).
-
 ## Value
 
 `grist_records()` returns a data frame whose first column `id` is the
-row ID. `grist_records_add()` returns the new row IDs.
-`grist_records_update()`, `grist_records_upsert()` and
-`grist_records_delete()` return `doc`. All but `grist_records()` return
+row ID. `grist_records_add()` returns `data` with a new first column
+`id` holding the row IDs Grist assigned. `grist_records_delete()`
+returns `data` unchanged. `grist_records_update()` and
+`grist_records_upsert()` return `doc`. All but `grist_records()` return
 invisibly.
 
 ## Type conversion
@@ -175,14 +194,21 @@ doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
 grist_records(doc, "Pets")
 grist_records(doc, "Pets", filter = list(pet = "cat"), sort = "-popularity")
 
+# Data comes first, so it can be piped in. The result has the new row IDs.
 new <- data.frame(pet = c("cat", "dog"), popularity = c(67L, 95L))
-ids <- grist_records_add(doc, "Pets", new)
+added <- new |> grist_records_add(doc, "Pets")
 
-grist_records_update(doc, "Pets", data.frame(id = ids, popularity = 1L))
+data.frame(id = added$id, popularity = 1L) |>
+  grist_records_update(doc, "Pets")
+
+# Match on a column. Grist skips rows that match nothing.
+data.frame(pet = "cat", popularity = 70L) |>
+  grist_records_update(doc, "Pets", by = "pet", unmatched = "ignore")
 
 # Match on a column instead of the row ID: update cats, add rabbits
 pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
 grist_records_upsert(doc, "Pets", pets, by = "pet")
-grist_records_delete(doc, "Pets", ids)
+
+added |> grist_records_delete(doc, "Pets")
 }
 ```

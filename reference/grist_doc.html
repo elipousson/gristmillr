@@ -68,7 +68,8 @@ most gristmillr functions so it works in pipelines:</p>
 
 <dl><dt id="arg-doc">doc<a class="anchor" aria-label="anchor" href="#arg-doc"></a></dt>
 <dd><p>A document ID, the URL of a document, or an existing
-<code>grist_doc</code> object.</p></dd>
+<code>grist_doc</code> object. An existing object is returned as it is, with a warning
+if <code>server</code>, <code>options</code> or <code>api_key</code> are also supplied.</p></dd>
 
 
 <dt id="arg-server">server<a class="anchor" aria-label="anchor" href="#arg-server"></a></dt>

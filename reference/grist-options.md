@@ -26,7 +26,11 @@ grist_read_options(
   col_names = c("id", "label")
 )
 
-grist_write_options(chunk_size = 500, unknown_cols = c("error", "drop"))
+grist_write_options(
+  chunk_size = 500,
+  unknown_cols = c("error", "drop"),
+  parse = TRUE
+)
 ```
 
 ## Arguments
@@ -84,6 +88,14 @@ grist_write_options(chunk_size = 500, unknown_cols = c("error", "drop"))
   `"error"` or silently `"drop"` them. Only checked when
   `convert = "auto"`, because other modes do not fetch column metadata.
 
+- parse:
+
+  If `TRUE` (the default), Grist parses string values to match the type
+  of each column, e.g. `"123"` becomes `123` in a numeric column. If
+  `FALSE`, values are stored as sent (`noparse=true`). Values that don't
+  fit a column's type are never rejected: Grist stores them as-is and
+  flags them as invalid.
+
 ## Value
 
 An S7 object holding validated settings.
@@ -107,4 +119,5 @@ grist_write_options(chunk_size = 250)
 #> <gristmillr::grist_write_options>
 #>  @ chunk_size  : num 250
 #>  @ unknown_cols: chr "error"
+#>  @ parse       : logi TRUE
 ```

@@ -53,6 +53,7 @@ Collate:
     'gristmillr-package.R'
     'history.R'
     'import-standalone-obj-type.R'
+    'import-standalone-purrr.R'
     'import-standalone-types-check.R'
     'import.R'
     'records.R'

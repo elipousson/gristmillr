@@ -324,18 +324,6 @@ check_record_columns <- function(
   )
 }
 
-map <- function(.x, .f, ...) {
-  lapply(.x, .f, ...)
-}
-
-map_lgl <- function(.x, .f, ...) {
-  vapply(.x, .f, logical(1), ...)
-}
-
-map_int <- function(.x, .f, ...) {
-  vapply(.x, .f, integer(1), ...)
-}
-
 # Parse the ISO 8601 UTC timestamps Grist returns for documents, orgs and
 # snapshots into POSIXct. Missing values stay NA.
 as_grist_time <- function(x) {

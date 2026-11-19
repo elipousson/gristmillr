@@ -184,10 +184,6 @@ columns_spec <- function(columns, call = caller_env()) {
   })
 }
 
-map_chr <- function(.x, .f, ...) {
-  vapply(.x, .f, character(1), ...)
-}
-
 na_if_empty <- function(x) {
   x[!is.na(x) & !nzchar(x)] <- NA_character_
   x

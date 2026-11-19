@@ -155,7 +155,3 @@ req_json_body <- function(req, data) {
 json_array <- function(x) {
   unname(as.list(x))
 }
-
-compact <- function(x) {
-  x[!map_lgl(x, is.null)]
-}

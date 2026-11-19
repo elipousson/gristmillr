@@ -385,16 +385,16 @@ test_that("grist_records_upsert() sends PUT requests with require and fields", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
 
-  doc <- test_doc()
+  data <- data.frame(name = c("Ann", "Bob"), age = c(5L, 6L))
   out <- grist_records_upsert(
-    doc,
+    data,
+    test_doc(),
     "People",
-    data.frame(name = c("Ann", "Bob"), age = c(5L, 6L)),
     by = "name",
     convert = "basic"
   )
 
-  expect_identical(out, doc)
+  expect_identical(out, data)
   expect_equal(httr2::req_get_method(mock$reqs[[1]]), "PUT")
   expect_equal(
     as.character(req_body(mock$reqs[[1]])),
@@ -406,38 +406,48 @@ test_that("grist_records_upsert() sends PUT requests with require and fields", {
   expect_equal(httr2::url_parse(mock$reqs[[1]]$url)$query, NULL)
 })
 
-test_that("grist_records_upsert() maps mode and onmany to query parameters", {
+test_that("upsert and insert send the query parameters for their mode", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""), json_resp(""), json_resp(""))
   data <- data.frame(name = "Ann", age = 5L)
-  upsert <- function(...) {
-    grist_records_upsert(
-      test_doc(),
-      "People",
-      data,
-      "name",
-      convert = "basic",
-      ...
-    )
-  }
 
-  upsert(mode = "update", onmany = "all")
-  upsert(mode = "insert", onmany = "none")
-  upsert()
+  out <- grist_records_upsert(
+    data,
+    test_doc(),
+    "People",
+    "name",
+    multiple = "all",
+    convert = "basic"
+  )
+  expect_identical(out, data)
+  grist_records_upsert(data, test_doc(), "People", "name", convert = "basic")
+  out <- grist_records_insert(data, test_doc(), "People", "name", convert = "basic")
+  expect_identical(out, data)
 
   query <- function(i) httr2::url_parse(mock$reqs[[i]]$url)$query
-  expect_equal(query(1), list(onmany = "all", noadd = "true"))
-  expect_equal(query(2), list(onmany = "none", noupdate = "true"))
-  expect_null(query(3))
+  expect_equal(query(1), list(onmany = "all"))
+  expect_null(query(2))
+  expect_equal(query(3), list(noupdate = "true"))
+  expect_equal(httr2::req_get_method(mock$reqs[[3]]), "PUT")
+})
+
+test_that("grist_records_insert() validates its input like upsert", {
+  local_grist_env()
+  data <- data.frame(name = c("a", "a"))
+  expect_error(grist_records_insert(data, test_doc(), "T", by = "name"))
+  expect_error(grist_records_insert(data, test_doc(), "T"), class = "rlang_error")
+  expect_error(
+    grist_records_insert(data.frame(id = 1L, a = 1), test_doc(), "T", by = "a")
+  )
 })
 
 test_that("grist_records_upsert() converts keys like other values", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
   grist_records_upsert(
+    data.frame(day = as.Date("2020-01-02"), n = 1L),
     test_doc(),
     "People",
-    data.frame(day = as.Date("2020-01-02"), n = 1L),
     by = "day",
     convert = "basic"
   )
@@ -451,9 +461,9 @@ test_that("grist_records_upsert() allows data with only key columns", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
   grist_records_upsert(
+    data.frame(name = "Ann"),
     test_doc(),
     "People",
-    data.frame(name = "Ann"),
     by = "name",
     convert = "basic"
   )
@@ -466,25 +476,25 @@ test_that("grist_records_upsert() allows data with only key columns", {
 test_that("grist_records_upsert() validates by and data", {
   local_grist_env()
   data <- data.frame(name = c("Ann", "Ann", NA), age = 1:3)
-  expect_snapshot(grist_records_upsert(test_doc(), "T", data), error = TRUE)
+  expect_snapshot(grist_records_upsert(data, test_doc(), "T"), error = TRUE)
   expect_snapshot(
-    grist_records_upsert(test_doc(), "T", data, by = 1),
+    grist_records_upsert(data, test_doc(), "T", by = 1),
     error = TRUE
   )
   expect_snapshot(
-    grist_records_upsert(test_doc(), "T", data, by = "x"),
+    grist_records_upsert(data, test_doc(), "T", by = "x"),
     error = TRUE
   )
   expect_snapshot(
-    grist_records_upsert(test_doc(), "T", data, by = "name"),
+    grist_records_upsert(data, test_doc(), "T", by = "name"),
     error = TRUE
   )
   expect_snapshot(
-    grist_records_upsert(test_doc(), "T", data[c(1, 2), ], by = "name"),
+    grist_records_upsert(data[c(1, 2), ], test_doc(), "T", by = "name"),
     error = TRUE
   )
   expect_snapshot(
-    grist_records_upsert(test_doc(), "T", data.frame(id = 1L, a = 1), by = "a"),
+    grist_records_upsert(data.frame(id = 1L, a = 1), test_doc(), "T", by = "a"),
     error = TRUE
   )
 })
@@ -493,9 +503,9 @@ test_that("grist_records_upsert() splits large writes into chunks", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""), json_resp(""), json_resp(""))
   grist_records_upsert(
+    data.frame(k = 1:5, v = 1:5),
     test_doc(),
     "People",
-    data.frame(k = 1:5, v = 1:5),
     by = "k",
     convert = "basic",
     options = grist_write_options(chunk_size = 2)
@@ -542,9 +552,9 @@ test_that("write options `parse = FALSE` sends noparse", {
     options = opts
   )
   grist_records_upsert(
+    data,
     test_doc(),
     "People",
-    data,
     by = "name",
     convert = "basic",
     options = opts

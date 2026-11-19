@@ -5,6 +5,7 @@
 \alias{grist_records_add}
 \alias{grist_records_update}
 \alias{grist_records_upsert}
+\alias{grist_records_insert}
 \alias{grist_records_delete}
 \title{Read, add, update and delete records}
 \usage{
@@ -38,12 +39,20 @@ grist_records_update(
 )
 
 grist_records_upsert(
+  data,
   doc,
   table,
-  data,
   by,
-  mode = c("upsert", "update", "insert"),
-  onmany = c("first", "all", "none"),
+  multiple = c("first", "all", "none"),
+  convert = c("auto", "basic", "raw"),
+  options = NULL
+)
+
+grist_records_insert(
+  data,
+  doc,
+  table,
+  by,
   convert = c("auto", "basic", "raw"),
   options = NULL
 )
@@ -95,29 +104,32 @@ other value is an error, so key-based updates need \code{unmatched = "ignore"}.}
 
 \item{multiple}{What to do when several records in the table match one row of
 \code{data}: update the \code{"first"} one, update \code{"all"} of them, or update
-\code{"none"} of them. Only used when \code{by} is not \code{"id"}.}
-
-\item{mode}{What to do with each row of \code{data}: \code{"upsert"} updates the
-record with matching \code{by} values and adds a record if there is none.
-\code{"update"} only updates matching records and skips rows that match
-nothing. \code{"insert"} only adds records and skips rows that already match.
-Grist does not report which rows were skipped.}
-
-\item{onmany}{What to do when several records in the table match one row
-of \code{data}: update the \code{"first"} one, update \code{"all"} of them, or update
-\code{"none"} of them.}
+\code{"none"} of them. Used when \code{by} is not \code{"id"}, but not by
+\code{grist_records_insert()}, which never updates.}
 }
 \value{
 \code{grist_records()} returns a data frame whose first column \code{id} is
 the row ID. \code{grist_records_add()} returns \code{data} with a new first column
-\code{id} holding the row IDs Grist assigned. \code{grist_records_delete()} returns
-\code{data} unchanged. \code{grist_records_update()} and \code{grist_records_upsert()}
-return \code{doc}. All but \code{grist_records()} return invisibly.
+\code{id} holding the row IDs Grist assigned. The other writing functions
+return \code{data} unchanged. All but \code{grist_records()} return invisibly.
 }
 \description{
 \code{grist_records()} reads records from a table into a data frame. The other
-functions write data frames back to Grist. Large writes are split into
-several requests (see \code{\link[=grist_write_options]{grist_write_options()}}).
+functions write data frames back to Grist. They are modelled on dplyr's
+\verb{rows_*()} functions, and take \code{data} first and return it, so they can be
+piped:
+\itemize{
+\item \code{grist_records_add()} adds records.
+\item \code{grist_records_update()} updates records, matched by row ID or by \code{by}.
+\item \code{grist_records_upsert()} updates records matched on \code{by} and adds the
+others.
+\item \code{grist_records_insert()} adds only the records with no match on \code{by}.
+\item \code{grist_records_delete()} deletes records.
+}
+
+For the functions that match on \code{by}, Grist doesn't report which rows it
+skipped. Large writes are split into several requests (see
+\code{\link[=grist_write_options]{grist_write_options()}}).
 }
 \section{Type conversion}{
 
@@ -167,7 +179,10 @@ data.frame(pet = "cat", popularity = 70L) |>
 
 # Match on a column instead of the row ID: update cats, add rabbits
 pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
-grist_records_upsert(doc, "Pets", pets, by = "pet")
+pets |> grist_records_upsert(doc, "Pets", by = "pet")
+
+# Add only the pets that aren't in the table yet
+pets |> grist_records_insert(doc, "Pets", by = "pet")
 
 added |> grist_records_delete(doc, "Pets")
 \dontshow{\}) # examplesIf}

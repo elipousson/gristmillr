@@ -105,7 +105,7 @@ test_that("HTTP errors carry Grist's message", {
   expect_error(grist_records(doc, "Missing"), class = "gristmillr_http_error")
 })
 
-test_that("grist_records_upsert() updates, adds and skips by key", {
+test_that("grist_records_upsert(), update and insert match on a key", {
   skip_if_no_grist()
   doc <- local_scratch_doc()
   grist_table_create(
@@ -124,9 +124,9 @@ test_that("grist_records_upsert() updates, adds and skips by key", {
   )
 
   grist_records_upsert(
+    data.frame(email = c("b@x", "c@x"), age = c(20L, 30L)),
     doc,
     "People",
-    data.frame(email = c("b@x", "c@x"), age = c(20L, 30L)),
     by = "email"
   )
   out <- grist_records(doc, "People")
@@ -136,30 +136,29 @@ test_that("grist_records_upsert() updates, adds and skips by key", {
 
   # A Date key matches the stored value.
   grist_records_upsert(
+    data.frame(joined = as.Date("2020-01-01"), age = 11L),
     doc,
     "People",
-    data.frame(joined = as.Date("2020-01-01"), age = 11L),
     by = "joined"
   )
   expect_equal(grist_records(doc, "People")$age, c(11L, 20L, 30L))
 
-  grist_records_upsert(
+  grist_records_update(
+    data.frame(email = c("a@x", "d@x"), age = c(99L, 99L)),
     doc,
     "People",
-    data.frame(email = c("a@x", "d@x"), age = c(99L, 99L)),
     by = "email",
-    mode = "update"
+    unmatched = "ignore"
   )
   out <- grist_records(doc, "People")
   expect_equal(out$email, c("a@x", "b@x", "c@x"))
   expect_equal(out$age, c(99L, 20L, 30L))
 
-  grist_records_upsert(
+  grist_records_insert(
+    data.frame(email = c("a@x", "e@x"), age = c(0L, 5L)),
     doc,
     "People",
-    data.frame(email = c("a@x", "e@x"), age = c(0L, 5L)),
-    by = "email",
-    mode = "insert"
+    by = "email"
   )
   out <- grist_records(doc, "People")
   expect_equal(out$email, c("a@x", "b@x", "c@x", "e@x"))
@@ -167,11 +166,11 @@ test_that("grist_records_upsert() updates, adds and skips by key", {
 
   grist_records_add(data.frame(email = "b@x", age = 21L), doc, "People")
   grist_records_upsert(
+    data.frame(email = "b@x", age = 7L),
     doc,
     "People",
-    data.frame(email = "b@x", age = 7L),
     by = "email",
-    onmany = "all"
+    multiple = "all"
   )
   expect_equal(
     grist_records(doc, "People", filter = list(email = "b@x"))$age,

@@ -135,7 +135,7 @@
 # grist_records_upsert() validates by and data
 
     Code
-      grist_records_upsert(test_doc(), "T", data)
+      grist_records_upsert(data, test_doc(), "T")
     Condition
       Error in `grist_records_upsert()`:
       ! `by` is absent but must be supplied.
@@ -143,7 +143,7 @@
 ---
 
     Code
-      grist_records_upsert(test_doc(), "T", data, by = 1)
+      grist_records_upsert(data, test_doc(), "T", by = 1)
     Condition
       Error in `grist_records_upsert()`:
       ! `by` must be a character vector of column names, not a number.
@@ -151,7 +151,7 @@
 ---
 
     Code
-      grist_records_upsert(test_doc(), "T", data, by = "x")
+      grist_records_upsert(data, test_doc(), "T", by = "x")
     Condition
       Error in `grist_records_upsert()`:
       ! Every column in `by` must be in `data`.
@@ -160,7 +160,7 @@
 ---
 
     Code
-      grist_records_upsert(test_doc(), "T", data, by = "name")
+      grist_records_upsert(data, test_doc(), "T", by = "name")
     Condition
       Error in `grist_records_upsert()`:
       ! `by` columns can't have missing values.
@@ -169,7 +169,7 @@
 ---
 
     Code
-      grist_records_upsert(test_doc(), "T", data[c(1, 2), ], by = "name")
+      grist_records_upsert(data[c(1, 2), ], test_doc(), "T", by = "name")
     Condition
       Error in `grist_records_upsert()`:
       ! `by` must identify each row of `data` uniquely.
@@ -178,9 +178,9 @@
 ---
 
     Code
-      grist_records_upsert(test_doc(), "T", data.frame(id = 1L, a = 1), by = "a")
+      grist_records_upsert(data.frame(id = 1L, a = 1), test_doc(), "T", by = "a")
     Condition
       Error in `grist_records_upsert()`:
-      ! `data` can't have an id column when upserting.
-      i Use `grist_records_update()` to change rows by ID.
+      ! `data` can't have an id column when matching on `by`.
+      i Use `grist_records_update()` with `by = "id"` to change rows by ID.
 

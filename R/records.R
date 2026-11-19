@@ -2,8 +2,20 @@
 #'
 #' @description
 #' `grist_records()` reads records from a table into a data frame. The other
-#' functions write data frames back to Grist. Large writes are split into
-#' several requests (see [grist_write_options()]).
+#' functions write data frames back to Grist. They are modelled on dplyr's
+#' `rows_*()` functions, and take `data` first and return it, so they can be
+#' piped:
+#'
+#' * `grist_records_add()` adds records.
+#' * `grist_records_update()` updates records, matched by row ID or by `by`.
+#' * `grist_records_upsert()` updates records matched on `by` and adds the
+#'   others.
+#' * `grist_records_insert()` adds only the records with no match on `by`.
+#' * `grist_records_delete()` deletes records.
+#'
+#' For the functions that match on `by`, Grist doesn't report which rows it
+#' skipped. Large writes are split into several requests (see
+#' [grist_write_options()]).
 #'
 #' @section Type conversion:
 #' The `convert` argument controls how cell values are translated between
@@ -62,20 +74,12 @@
 #'   other value is an error, so key-based updates need `unmatched = "ignore"`.
 #' @param multiple What to do when several records in the table match one row of
 #'   `data`: update the `"first"` one, update `"all"` of them, or update
-#'   `"none"` of them. Only used when `by` is not `"id"`.
-#' @param mode What to do with each row of `data`: `"upsert"` updates the
-#'   record with matching `by` values and adds a record if there is none.
-#'   `"update"` only updates matching records and skips rows that match
-#'   nothing. `"insert"` only adds records and skips rows that already match.
-#'   Grist does not report which rows were skipped.
-#' @param onmany What to do when several records in the table match one row
-#'   of `data`: update the `"first"` one, update `"all"` of them, or update
-#'   `"none"` of them.
+#'   `"none"` of them. Used when `by` is not `"id"`, but not by
+#'   `grist_records_insert()`, which never updates.
 #' @returns `grist_records()` returns a data frame whose first column `id` is
 #'   the row ID. `grist_records_add()` returns `data` with a new first column
-#'   `id` holding the row IDs Grist assigned. `grist_records_delete()` returns
-#'   `data` unchanged. `grist_records_update()` and `grist_records_upsert()`
-#'   return `doc`. All but `grist_records()` return invisibly.
+#'   `id` holding the row IDs Grist assigned. The other writing functions
+#'   return `data` unchanged. All but `grist_records()` return invisibly.
 #' @family records
 #' @examplesIf FALSE
 #' doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
@@ -96,7 +100,10 @@
 #'
 #' # Match on a column instead of the row ID: update cats, add rabbits
 #' pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
-#' grist_records_upsert(doc, "Pets", pets, by = "pet")
+#' pets |> grist_records_upsert(doc, "Pets", by = "pet")
+#'
+#' # Add only the pets that aren't in the table yet
+#' pets |> grist_records_insert(doc, "Pets", by = "pet")
 #'
 #' added |> grist_records_delete(doc, "Pets")
 #' @export
@@ -201,7 +208,7 @@ grist_records_update <- function(
 
   if (!identical(by, "id")) {
     check_unmatched(unmatched, "ignore", by)
-    check_upsert_by(data, by)
+    check_by_columns(data, by)
     put_records(
       data,
       doc,
@@ -240,47 +247,66 @@ grist_records_update <- function(
 #' @rdname grist_records
 #' @export
 grist_records_upsert <- function(
+  data,
   doc,
   table,
-  data,
   by,
-  mode = c("upsert", "update", "insert"),
-  onmany = c("first", "all", "none"),
+  multiple = c("first", "all", "none"),
   convert = c("auto", "basic", "raw"),
   options = NULL
 ) {
+  check_data_frame(data)
   doc <- grist_doc(doc)
   check_string(table)
-  check_data_frame(data)
   check_required(by)
-  mode <- arg_match(mode)
-  onmany <- arg_match(onmany)
+  check_by(by)
+  multiple <- arg_match(multiple)
   convert <- arg_match(convert)
   options <- as_write_options(options)
-  check_upsert_by(data, by)
+  check_by_columns(data, by)
 
-  data <- prepare_write_data(doc, table, data, convert, options)
-  records <- df_to_records(data, with_id = FALSE, convert = convert) |>
-    map(function(rec) {
-      list(
-        require = rec$fields[by],
-        fields = rec$fields[setdiff(names(rec$fields), by)]
-      )
-    })
+  put_records(
+    data,
+    doc,
+    table,
+    by,
+    mode = "upsert",
+    multiple = multiple,
+    convert = convert,
+    options = options
+  )
+  invisible(data)
+}
 
-  for (chunk in chunk_rows(length(records), options@chunk_size)) {
-    grist_request(doc, "tables", table, "records") |>
-      httr2::req_method("PUT") |>
-      httr2::req_url_query(
-        onmany = if (onmany != "first") onmany,
-        noadd = if (mode == "update") "true",
-        noupdate = if (mode == "insert") "true",
-        noparse = if (!options@parse) "true"
-      ) |>
-      req_json_body(list(records = records[chunk])) |>
-      grist_perform()
-  }
-  invisible(doc)
+#' @rdname grist_records
+#' @export
+grist_records_insert <- function(
+  data,
+  doc,
+  table,
+  by,
+  convert = c("auto", "basic", "raw"),
+  options = NULL
+) {
+  check_data_frame(data)
+  doc <- grist_doc(doc)
+  check_string(table)
+  check_required(by)
+  check_by(by)
+  convert <- arg_match(convert)
+  options <- as_write_options(options)
+  check_by_columns(data, by)
+
+  put_records(
+    data,
+    doc,
+    table,
+    by,
+    mode = "insert",
+    convert = convert,
+    options = options
+  )
+  invisible(data)
 }
 
 # Send records to the endpoint that matches rows on the `by` columns. `mode`
@@ -372,18 +398,12 @@ req_noparse <- function(req, options) {
   httr2::req_url_query(req, noparse = if (!options@parse) "true")
 }
 
-check_upsert_by <- function(data, by, call = caller_env()) {
-  if (!is.character(by) || length(by) == 0 || anyNA(by) || anyDuplicated(by)) {
-    cli::cli_abort(
-      "{.arg by} must be a character vector of column names, not {.obj_type_friendly {by}}.",
-      call = call
-    )
-  }
+check_by_columns <- function(data, by, call = caller_env()) {
   if ("id" %in% names(data)) {
     cli::cli_abort(
       c(
-        "{.arg data} can't have an {.field id} column when upserting.",
-        i = "Use {.fn grist_records_update} to change rows by ID."
+        "{.arg data} can't have an {.field id} column when matching on {.arg by}.",
+        i = 'Use {.fn grist_records_update} with {.code by = "id"} to change rows by ID.'
       ),
       call = call
     )

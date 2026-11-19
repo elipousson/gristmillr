@@ -390,3 +390,39 @@ test_that("grist_records() keeps untyped columns of an empty table", {
   out <- grist_records(test_doc(), "T", convert = "basic")
   expect_equal(nrow(out), 0)
 })
+
+test_that("write options `parse = FALSE` sends noparse", {
+  local_grist_env()
+  mock <- local_grist_mock(
+    json_resp('{"records":[{"id":1}]}'),
+    json_resp('{"records":[{"id":1}]}'),
+    json_resp("{}"),
+    json_resp("{}")
+  )
+  opts <- grist_write_options(parse = FALSE)
+  data <- data.frame(name = "Ann")
+
+  grist_records_add(test_doc(), "People", data, convert = "basic")
+  grist_records_add(test_doc(), "People", data, convert = "basic", options = opts)
+  grist_records_update(
+    test_doc(),
+    "People",
+    data.frame(id = 1L, name = "Ann"),
+    convert = "basic",
+    options = opts
+  )
+  grist_records_upsert(
+    test_doc(),
+    "People",
+    data,
+    by = "name",
+    convert = "basic",
+    options = opts
+  )
+
+  noparse <- function(i) httr2::url_parse(mock$reqs[[i]]$url)$query$noparse
+  expect_null(noparse(1))
+  expect_equal(noparse(2), "true")
+  expect_equal(noparse(3), "true")
+  expect_equal(noparse(4), "true")
+})

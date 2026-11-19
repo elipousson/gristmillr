@@ -1,5 +1,8 @@
 # gristmillr 0.0.0.9000
 
+* `grist_write_options()` gains `parse`. Set `parse = FALSE` to send
+  `noparse=true` and store values as sent instead of letting Grist parse them
+  to match column types.
 * `grist_workspaces()`, `grist_docs()` and `grist_workspace_create()` use your
   only org when the server has no "current" org, as with Grist Desktop.
 * Functions that delete or overwrite things (`grist_doc_delete()`,

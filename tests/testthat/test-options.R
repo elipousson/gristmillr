@@ -2,6 +2,7 @@ test_that("option constructors have sensible defaults", {
   expect_equal(grist_request_options()@timeout, 30)
   expect_equal(grist_read_options()@col_names, "id")
   expect_equal(grist_write_options()@unknown_cols, "error")
+  expect_true(grist_write_options()@parse)
 })
 
 test_that("option enums are validated", {
@@ -13,6 +14,7 @@ test_that("option values are validated", {
   expect_snapshot(grist_request_options(timeout = -1), error = TRUE)
   expect_snapshot(grist_write_options(chunk_size = 0), error = TRUE)
   expect_snapshot(grist_read_options(hidden = NA), error = TRUE)
+  expect_snapshot(grist_write_options(parse = NA), error = TRUE)
 })
 
 test_that("package-wide defaults are used when `options` is NULL", {

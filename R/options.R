@@ -29,6 +29,11 @@
 #' @param unknown_cols What to do when data has columns that do not exist in
 #'   the Grist table: `"error"` or silently `"drop"` them. Only checked when
 #'   `convert = "auto"`, because other modes do not fetch column metadata.
+#' @param parse If `TRUE` (the default), Grist parses string values to match
+#'   the type of each column, e.g. `"123"` becomes `123` in a numeric column.
+#'   If `FALSE`, values are stored as sent (`noparse=true`). Values that don't
+#'   fit a column's type are never rejected: Grist stores them as-is and flags
+#'   them as invalid.
 #' @returns An S7 object holding validated settings.
 #' @examples
 #' grist_request_options(timeout = 60)
@@ -147,13 +152,19 @@ grist_write_options <- new_class(
   "grist_write_options",
   properties = list(
     chunk_size = class_numeric,
-    unknown_cols = class_character
+    unknown_cols = class_character,
+    parse = class_logical
   ),
-  constructor = function(chunk_size = 500, unknown_cols = c("error", "drop")) {
+  constructor = function(
+    chunk_size = 500,
+    unknown_cols = c("error", "drop"),
+    parse = TRUE
+  ) {
     new_object(
       S7_object(),
       chunk_size = chunk_size,
-      unknown_cols = arg_match(unknown_cols)
+      unknown_cols = arg_match(unknown_cols),
+      parse = parse
     )
   },
   validator = function(self) {
@@ -162,6 +173,9 @@ grist_write_options <- new_class(
     }
     if (!is_string(self@unknown_cols, c("error", "drop"))) {
       return('@unknown_cols must be "error" or "drop".')
+    }
+    if (!is_bool(self@parse)) {
+      return("@parse must be `TRUE` or `FALSE`.")
     }
     NULL
   }

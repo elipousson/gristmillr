@@ -150,6 +150,7 @@ grist_records_add <- function(
   ids <- integer()
   for (chunk in chunk_rows(length(records), options@chunk_size)) {
     body <- grist_request(doc, "tables", table, "records") |>
+      req_noparse(options) |>
       req_json_body(list(records = records[chunk])) |>
       grist_perform()
     ids <- c(ids, map_int(body$records, function(x) as.integer(x$id)))
@@ -184,6 +185,7 @@ grist_records_update <- function(
   for (chunk in chunk_rows(length(records), options@chunk_size)) {
     grist_request(doc, "tables", table, "records") |>
       httr2::req_method("PATCH") |>
+      req_noparse(options) |>
       req_json_body(list(records = records[chunk])) |>
       grist_perform()
   }
@@ -227,12 +229,17 @@ grist_records_upsert <- function(
       httr2::req_url_query(
         onmany = if (onmany != "first") onmany,
         noadd = if (mode == "update") "true",
-        noupdate = if (mode == "insert") "true"
+        noupdate = if (mode == "insert") "true",
+        noparse = if (!options@parse) "true"
       ) |>
       req_json_body(list(records = records[chunk])) |>
       grist_perform()
   }
   invisible(doc)
+}
+
+req_noparse <- function(req, options) {
+  httr2::req_url_query(req, noparse = if (!options@parse) "true")
 }
 
 check_upsert_by <- function(data, by, call = caller_env()) {

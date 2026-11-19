@@ -41,6 +41,15 @@
       ! <gristmillr::grist_read_options> object is invalid:
       - @hidden must be `TRUE` or `FALSE`.
 
+---
+
+    Code
+      grist_write_options(parse = NA)
+    Condition
+      Error in `grist_write_options()`:
+      ! <gristmillr::grist_write_options> object is invalid:
+      - @parse must be `TRUE` or `FALSE`.
+
 # options of the wrong class are rejected
 
     Code

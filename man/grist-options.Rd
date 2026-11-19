@@ -21,7 +21,11 @@ grist_read_options(
   col_names = c("id", "label")
 )
 
-grist_write_options(chunk_size = 500, unknown_cols = c("error", "drop"))
+grist_write_options(
+  chunk_size = 500,
+  unknown_cols = c("error", "drop"),
+  parse = TRUE
+)
 }
 \arguments{
 \item{timeout}{Request timeout in seconds.}
@@ -54,6 +58,12 @@ Grist column IDs (\code{"id"}) or column labels (\code{"label"}).}
 \item{unknown_cols}{What to do when data has columns that do not exist in
 the Grist table: \code{"error"} or silently \code{"drop"} them. Only checked when
 \code{convert = "auto"}, because other modes do not fetch column metadata.}
+
+\item{parse}{If \code{TRUE} (the default), Grist parses string values to match
+the type of each column, e.g. \code{"123"} becomes \code{123} in a numeric column.
+If \code{FALSE}, values are stored as sent (\code{noparse=true}). Values that don't
+fit a column's type are never rejected: Grist stores them as-is and flags
+them as invalid.}
 }
 \value{
 An S7 object holding validated settings.

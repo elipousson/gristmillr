@@ -8,7 +8,8 @@ grist_request(doc, ...)
 }
 \arguments{
 \item{doc}{A document ID, the URL of a document, or an existing
-\code{grist_doc} object.}
+\code{grist_doc} object. An existing object is returned as it is, with a warning
+if \code{server}, \code{options} or \code{api_key} are also supplied.}
 
 \item{...}{Path components appended to the document URL, such as
 \code{"tables"} or \code{c("tables", "People", "records")}.}

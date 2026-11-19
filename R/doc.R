@@ -31,7 +31,8 @@ NULL
 #' Avoid typing keys into scripts you share or commit.
 #'
 #' @param doc A document ID, the URL of a document, or an existing
-#'   `grist_doc` object.
+#'   `grist_doc` object. An existing object is returned as it is, with a warning
+#'   if `server`, `options` or `api_key` are also supplied.
 #' @param server URL of the Grist server, such as `"https://docs.getgrist.com"`
 #'   or `"https://myteam.getgrist.com"`. For a self-hosted server, include the
 #'   team path if needed, e.g. `"http://localhost:8484/o/docs"`. Defaults to the
@@ -58,6 +59,21 @@ grist_doc <- new_class(
   ),
   constructor = function(doc, server = NULL, options = NULL, api_key = NULL) {
     if (S7::S7_inherits(doc, grist_doc)) {
+      ignored <- c(
+        server = !is.null(server),
+        options = !is.null(options),
+        api_key = !is.null(api_key)
+      )
+      if (any(ignored)) {
+        ignored <- names(ignored)[ignored]
+        cli::cli_warn(
+          c(
+            "{.arg {ignored}} {?is/are} ignored when {.arg doc} is already a {.cls grist_doc}.",
+            i = "To change settings, create a new handle from the document ID."
+          ),
+          class = "gristmillr_warning_doc_args"
+        )
+      }
       return(doc)
     }
     check_string(doc)

@@ -45,3 +45,20 @@ test_that("grist_count() counts rows and quotes the table name", {
     'FROM \\\\"We\\\\"\\\\"ird\\\\"'
   )
 })
+
+test_that("named args are sent as a JSON array", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp('{"records":[]}'))
+
+  grist_sql(test_doc(), "select ?, ?", args = c(a = 1, b = 2))
+  grist_sql(test_doc(), "select ?", args = list(x = "y"))
+
+  expect_equal(
+    req_body_sent(mock$reqs[[1]]),
+    '{"sql":"select ?, ?","args":[1,2]}'
+  )
+  expect_equal(
+    req_body_sent(mock$reqs[[2]]),
+    '{"sql":"select ?","args":["y"]}'
+  )
+})

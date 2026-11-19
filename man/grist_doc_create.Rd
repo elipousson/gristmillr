@@ -46,7 +46,8 @@ from \code{getOption("gristmillr.request_options")} or
 \code{\link[=grist_request_options]{grist_request_options()}} is used.}
 
 \item{doc}{A document ID, the URL of a document, or an existing
-\code{grist_doc} object.}
+\code{grist_doc} object. An existing object is returned as it is, with a warning
+if \code{server}, \code{options} or \code{api_key} are also supplied.}
 
 \item{mode}{\code{"trash"} moves the document to the trash, where it can be
 restored with \code{grist_doc_restore()}. \code{"permanent"} deletes it for good.}

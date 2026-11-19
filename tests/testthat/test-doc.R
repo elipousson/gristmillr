@@ -43,6 +43,18 @@ test_that("grist_doc() returns existing handles unchanged", {
   expect_identical(grist_doc(doc), doc)
 })
 
+test_that("grist_doc() warns about arguments ignored for existing handles", {
+  doc <- grist_doc("abc", server = "https://a.getgrist.com")
+
+  expect_snapshot(out <- grist_doc(doc, server = "https://b.getgrist.com"))
+  expect_identical(out, doc)
+  expect_warning(
+    grist_doc(doc, api_key = "x", options = grist_request_options()),
+    class = "gristmillr_warning_doc_args"
+  )
+  expect_no_warning(grist_doc(doc))
+})
+
 test_that("grist_doc() validates its input", {
   expect_snapshot(grist_doc("https://example.com/nothing"), error = TRUE)
   expect_snapshot(grist_doc(1), error = TRUE)

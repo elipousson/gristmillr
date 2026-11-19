@@ -150,9 +150,10 @@ req_json_body <- function(req, data) {
   httr2::req_body_json(req, data, auto_unbox = TRUE, null = "null", na = "null")
 }
 
-# Convert a vector or list into the strict JSON shape Grist expects.
+# Convert a vector or list into the strict JSON shape Grist expects. Names are
+# dropped because a named list would be written as a JSON object.
 json_array <- function(x) {
-  as.list(x)
+  unname(as.list(x))
 }
 
 compact <- function(x) {

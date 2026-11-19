@@ -224,3 +224,15 @@ test_that("truncating history works against a live server", {
   expect_lte(nrow(grist_doc_history(doc)), 3)
   expect_equal(grist_records(doc, "T")$x, c("a", "b"))
 })
+
+test_that("grist_snapshots_remove() sends names-free snapshot IDs", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp("{}"))
+
+  grist_snapshots_remove(test_doc(), c(a = "s1", b = "s2"), ask = FALSE)
+
+  expect_equal(
+    req_body_sent(mock$reqs[[1]]),
+    '{"snapshotIds":["s1","s2"]}'
+  )
+})

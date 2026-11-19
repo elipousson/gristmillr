@@ -1,3 +1,12 @@
+# grist_doc() warns about arguments ignored for existing handles
+
+    Code
+      out <- grist_doc(doc, server = "https://b.getgrist.com")
+    Condition
+      Warning:
+      `server` is ignored when `doc` is already a <grist_doc>.
+      i To change settings, create a new handle from the document ID.
+
 # grist_doc() validates its input
 
     Code

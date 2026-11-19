@@ -8,7 +8,8 @@ grist_doc(doc, server = NULL, options = NULL, api_key = NULL)
 }
 \arguments{
 \item{doc}{A document ID, the URL of a document, or an existing
-\code{grist_doc} object.}
+\code{grist_doc} object. An existing object is returned as it is, with a warning
+if \code{server}, \code{options} or \code{api_key} are also supplied.}
 
 \item{server}{URL of the Grist server, such as \code{"https://docs.getgrist.com"}
 or \code{"https://myteam.getgrist.com"}. For a self-hosted server, include the

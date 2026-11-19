@@ -135,7 +135,19 @@ tests.
   and the `unmatched` argument of `grist_records_update()` replace.
 - [ ] Decide return values for the schema and document functions in the same
   pass. They should follow the same rule, and `grist_workspace_*()` return an
-  ID where `grist_doc_*()` return a handle.
+  ID where `grist_doc_*()` return a handle. Items to settle:
+  - [ ] `grist_columns_add()` returns the new column IDs (invisibly) but
+    `grist_columns_modify()` returns `doc`. Make both return `doc` so calls can
+    be piped, and let `grist_columns()` give the IDs.
+  - [ ] `grist_table_create()` and the other table functions: decide whether
+    they return `doc` or the table ID, and apply the same rule everywhere.
+  - [ ] `grist_workspace_*()` return an ID where `grist_doc_*()` return a
+    handle. Decide on one rule (a handle, or the ID) for create, rename and
+    delete.
+  - [ ] Decide whether the schema functions should take `doc` first and return
+    it (pipe a `doc` through several schema changes) rather than returning IDs.
+  - [ ] Check every `@returns` section, example and test after the change, and
+    update the vignette and README.
 
 ## Booleans to review
 

@@ -44,7 +44,7 @@
 # grist_records_add() with convert = 'auto' checks column names
 
     Code
-      grist_records_add(test_doc(), "People", data.frame(name = "x", nope = 1))
+      grist_records_add(data.frame(name = "x", nope = 1), test_doc(), "People")
     Condition
       Error in `grist_records_add()`:
       ! `data` has 1 column not in the Grist table.
@@ -54,7 +54,7 @@
 # grist_records_add() rejects an id column
 
     Code
-      grist_records_add(test_doc(), "People", data.frame(id = 1, x = 1))
+      grist_records_add(data.frame(id = 1, x = 1), test_doc(), "People")
     Condition
       Error in `grist_records_add()`:
       ! `data` can't have an id column when adding records.
@@ -63,7 +63,7 @@
 ---
 
     Code
-      grist_records_add(test_doc(), "People", list(x = 1))
+      grist_records_add(list(x = 1), test_doc(), "People")
     Condition
       Error in `grist_records_add()`:
       ! `data` must be a data frame, not a list.
@@ -79,19 +79,19 @@
 # grist_records_delete() validates ids
 
     Code
-      grist_records_delete(test_doc(), "People", "a")
+      grist_records_delete("a", test_doc(), "People")
     Condition
       Error in `grist_records_delete()`:
-      ! `ids` must be whole numbers without missing values.
+      ! `data` must be whole numbers without missing values.
       i Got a string.
 
 ---
 
     Code
-      grist_records_delete(test_doc(), "People", data.frame(x = 1))
+      grist_records_delete(data.frame(x = 1), test_doc(), "People")
     Condition
       Error in `grist_records_delete()`:
-      ! `ids` must have an id column.
+      ! `data` must have an id column.
 
 # grist_records_update() validates and converts ids
 

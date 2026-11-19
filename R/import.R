@@ -173,11 +173,11 @@ grist_import <- function(
     rows <- data[[name]][setdiff(names(spec$columns), spec$fk_columns)]
     names(rows) <- col_ids[[name]][names(rows)]
     new_ids[[name]] <- grist_records_add(
+      rows,
       doc,
       table_ids[[name]],
-      rows,
       options = options
-    )
+    )$id
   }
 
   # Rewrite references from source keys to the new row IDs.

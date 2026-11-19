@@ -43,9 +43,11 @@
 #'   for the writing functions). If `NULL`, the default set with
 #'   `options(gristmillr.read_options = )` or
 #'   `options(gristmillr.write_options = )` is used.
-#' @param data A data frame of records. For `grist_records_add()`, each column
-#'   must be a column of the Grist table. For `grist_records_update()`, `data`
-#'   must also have an integer `id` column.
+#' @param data A data frame of records, which comes first so that it can be
+#'   piped in. Each column must be a column of the Grist table. For
+#'   `grist_records_update()`, `data` must also have an integer `id` column. For
+#'   `grist_records_delete()`, `data` is a data frame with an `id` column (such
+#'   as the result of [grist_records()]) or a vector of row IDs.
 #' @param by Character vector of columns that identify a record, such as
 #'   `"email"`. Each row of `data` is matched against the table on these
 #'   columns. `data` must contain them, with no missing values and no
@@ -58,13 +60,11 @@
 #' @param onmany What to do when several records in the table match one row
 #'   of `data`: update the `"first"` one, update `"all"` of them, or update
 #'   `"none"` of them.
-#' @param ids Row IDs to delete, either an integer vector or a data frame with
-#'   an `id` column (such as the result of [grist_records()]).
 #' @returns `grist_records()` returns a data frame whose first column `id` is
-#'   the row ID. `grist_records_add()` returns the new row IDs.
-#'   `grist_records_update()`, `grist_records_upsert()` and
-#'   `grist_records_delete()` return `doc`. All but `grist_records()` return
-#'   invisibly.
+#'   the row ID. `grist_records_add()` returns `data` with a new first column
+#'   `id` holding the row IDs Grist assigned. `grist_records_delete()` returns
+#'   `data` unchanged. `grist_records_update()` and `grist_records_upsert()`
+#'   return `doc`. All but `grist_records()` return invisibly.
 #' @family records
 #' @examplesIf FALSE
 #' doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
@@ -72,15 +72,17 @@
 #' grist_records(doc, "Pets")
 #' grist_records(doc, "Pets", filter = list(pet = "cat"), sort = "-popularity")
 #'
+#' # Data comes first, so it can be piped in. The result has the new row IDs.
 #' new <- data.frame(pet = c("cat", "dog"), popularity = c(67L, 95L))
-#' ids <- grist_records_add(doc, "Pets", new)
+#' added <- new |> grist_records_add(doc, "Pets")
 #'
-#' grist_records_update(doc, "Pets", data.frame(id = ids, popularity = 1L))
+#' grist_records_update(doc, "Pets", data.frame(id = added$id, popularity = 1L))
 #'
 #' # Match on a column instead of the row ID: update cats, add rabbits
 #' pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
 #' grist_records_upsert(doc, "Pets", pets, by = "pet")
-#' grist_records_delete(doc, "Pets", ids)
+#'
+#' added |> grist_records_delete(doc, "Pets")
 #' @export
 grist_records <- function(
   doc,
@@ -123,15 +125,15 @@ grist_records <- function(
 #' @rdname grist_records
 #' @export
 grist_records_add <- function(
+  data,
   doc,
   table,
-  data,
   convert = c("auto", "basic", "raw"),
   options = NULL
 ) {
+  check_data_frame(data)
   doc <- grist_doc(doc)
   check_string(table)
-  check_data_frame(data)
   convert <- arg_match(convert)
   options <- as_write_options(options)
 
@@ -144,8 +146,8 @@ grist_records_add <- function(
     )
   }
 
-  data <- prepare_write_data(doc, table, data, convert, options)
-  records <- df_to_records(data, with_id = FALSE, convert = convert)
+  records <- prepare_write_data(doc, table, data, convert, options) |>
+    df_to_records(with_id = FALSE, convert = convert)
 
   ids <- integer()
   for (chunk in chunk_rows(length(records), options@chunk_size)) {
@@ -155,7 +157,9 @@ grist_records_add <- function(
       grist_perform()
     ids <- c(ids, map_int(body$records, function(x) as.integer(x$id)))
   }
-  invisible(ids)
+
+  data$id <- ids
+  invisible(data[c("id", setdiff(names(data), "id"))])
 }
 
 #' @rdname grist_records
@@ -296,18 +300,19 @@ check_upsert_by <- function(data, by, call = caller_env()) {
 
 #' @rdname grist_records
 #' @export
-grist_records_delete <- function(doc, table, ids, options = NULL) {
+grist_records_delete <- function(data, doc, table, options = NULL) {
   doc <- grist_doc(doc)
   check_string(table)
   options <- as_write_options(options)
 
-  if (is.data.frame(ids)) {
-    if (!"id" %in% names(ids)) {
-      cli::cli_abort("{.arg ids} must have an {.field id} column.")
+  ids <- if (is.data.frame(data)) {
+    if (!"id" %in% names(data)) {
+      cli::cli_abort("{.arg data} must have an {.field id} column.")
     }
-    ids <- ids$id
+    as_row_ids(data$id, arg = "data$id")
+  } else {
+    as_row_ids(data)
   }
-  ids <- as_row_ids(ids)
 
   for (chunk in chunk_rows(length(ids), options@chunk_size)) {
     grist_request(doc, "tables", table, "records", "delete") |>
@@ -315,7 +320,7 @@ grist_records_delete <- function(doc, table, ids, options = NULL) {
       req_json_body(json_array(ids[chunk])) |>
       grist_perform()
   }
-  invisible(doc)
+  invisible(data)
 }
 
 # Row IDs as integers. Numbers and strings are accepted if they convert to an

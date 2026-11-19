@@ -122,7 +122,7 @@ test_that("downloads work against a live server", {
   skip_if_no_grist()
   doc <- local_scratch_doc()
   grist_table_create(doc, "People", c(name = "Text", age = "Int"))
-  grist_records_add(doc, "People", data.frame(name = "Ann", age = 30L))
+  grist_records_add(data.frame(name = "Ann", age = 30L), doc, "People")
 
   path <- withr::local_tempfile(fileext = ".csv")
   grist_doc_download(doc, path, format = "csv", table = "People")

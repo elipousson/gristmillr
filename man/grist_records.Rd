@@ -19,9 +19,9 @@ grist_records(
 )
 
 grist_records_add(
+  data,
   doc,
   table,
-  data,
   convert = c("auto", "basic", "raw"),
   options = NULL
 )
@@ -45,7 +45,7 @@ grist_records_upsert(
   options = NULL
 )
 
-grist_records_delete(doc, table, ids, options = NULL)
+grist_records_delete(data, doc, table, options = NULL)
 }
 \arguments{
 \item{doc}{A \code{grist_doc} object, document ID or document URL. See
@@ -70,9 +70,11 @@ for the writing functions). If \code{NULL}, the default set with
 \code{options(gristmillr.read_options = )} or
 \code{options(gristmillr.write_options = )} is used.}
 
-\item{data}{A data frame of records. For \code{grist_records_add()}, each column
-must be a column of the Grist table. For \code{grist_records_update()}, \code{data}
-must also have an integer \code{id} column.}
+\item{data}{A data frame of records, which comes first so that it can be
+piped in. Each column must be a column of the Grist table. For
+\code{grist_records_update()}, \code{data} must also have an integer \code{id} column. For
+\code{grist_records_delete()}, \code{data} is a data frame with an \code{id} column (such
+as the result of \code{\link[=grist_records]{grist_records()}}) or a vector of row IDs.}
 
 \item{by}{Character vector of columns that identify a record, such as
 \code{"email"}. Each row of \code{data} is matched against the table on these
@@ -88,16 +90,13 @@ Grist does not report which rows were skipped.}
 \item{onmany}{What to do when several records in the table match one row
 of \code{data}: update the \code{"first"} one, update \code{"all"} of them, or update
 \code{"none"} of them.}
-
-\item{ids}{Row IDs to delete, either an integer vector or a data frame with
-an \code{id} column (such as the result of \code{\link[=grist_records]{grist_records()}}).}
 }
 \value{
 \code{grist_records()} returns a data frame whose first column \code{id} is
-the row ID. \code{grist_records_add()} returns the new row IDs.
-\code{grist_records_update()}, \code{grist_records_upsert()} and
-\code{grist_records_delete()} return \code{doc}. All but \code{grist_records()} return
-invisibly.
+the row ID. \code{grist_records_add()} returns \code{data} with a new first column
+\code{id} holding the row IDs Grist assigned. \code{grist_records_delete()} returns
+\code{data} unchanged. \code{grist_records_update()} and \code{grist_records_upsert()}
+return \code{doc}. All but \code{grist_records()} return invisibly.
 }
 \description{
 \code{grist_records()} reads records from a table into a data frame. The other
@@ -139,15 +138,17 @@ doc <- grist_doc("am2iHJ9Amvo7Ve3EE5emtu")
 grist_records(doc, "Pets")
 grist_records(doc, "Pets", filter = list(pet = "cat"), sort = "-popularity")
 
+# Data comes first, so it can be piped in. The result has the new row IDs.
 new <- data.frame(pet = c("cat", "dog"), popularity = c(67L, 95L))
-ids <- grist_records_add(doc, "Pets", new)
+added <- new |> grist_records_add(doc, "Pets")
 
-grist_records_update(doc, "Pets", data.frame(id = ids, popularity = 1L))
+grist_records_update(doc, "Pets", data.frame(id = added$id, popularity = 1L))
 
 # Match on a column instead of the row ID: update cats, add rabbits
 pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
 grist_records_upsert(doc, "Pets", pets, by = "pet")
-grist_records_delete(doc, "Pets", ids)
+
+added |> grist_records_delete(doc, "Pets")
 \dontshow{\}) # examplesIf}
 }
 \seealso{

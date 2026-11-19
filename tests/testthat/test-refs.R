@@ -186,11 +186,11 @@ test_that("references resolve against a live server", {
 
   grist_table_create(doc, "People", c(name = "Text"))
   grist_table_create(doc, "Orders", c(item = "Text", person = "Ref:People"))
-  people <- grist_records_add(doc, "People", data.frame(name = c("Ann", "Bob")))
+  people <- grist_records_add(data.frame(name = c("Ann", "Bob")), doc, "People")$id
   grist_records_add(
+    data.frame(item = c("pen", "cap"), person = c(people[[2]], NA)),
     doc,
-    "Orders",
-    data.frame(item = c("pen", "cap"), person = c(people[[2]], NA))
+    "Orders"
   )
 
   # Point the reference at the `name` column, as the Grist interface does.

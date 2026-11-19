@@ -145,9 +145,9 @@ test_that("attachments round-trip against a live server", {
   expect_equal(grist_attachment_info(doc, ids)$file_size, file.size(file))
 
   rid <- grist_records_add(
+    data.frame(title = "Q1", files = I(list(ids))),
     doc,
-    "Reports",
-    data.frame(title = "Q1", files = I(list(ids)))
+    "Reports"
   )
   report <- grist_records(doc, "Reports")
   expect_equal(report$files, list(ids))

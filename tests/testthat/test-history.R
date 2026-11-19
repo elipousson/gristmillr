@@ -122,7 +122,7 @@ test_that("history works against a live server", {
   before <- nrow(grist_doc_history(doc))
 
   grist_table_create(doc, "T", c(x = "Text"))
-  grist_records_add(doc, "T", data.frame(x = c("a", "b")))
+  grist_records_add(data.frame(x = c("a", "b")), doc, "T")
 
   history <- grist_doc_history(doc)
   expect_gt(nrow(history), before)
@@ -215,7 +215,7 @@ test_that("truncating history works against a live server", {
   skip_if_no_grist()
   doc <- local_scratch_doc()
   grist_table_create(doc, "T", c(x = "Text"))
-  grist_records_add(doc, "T", data.frame(x = c("a", "b")))
+  grist_records_add(data.frame(x = c("a", "b")), doc, "T")
 
   expect_identical(
     grist_doc_history_truncate(doc, keep = 2, ask = FALSE),

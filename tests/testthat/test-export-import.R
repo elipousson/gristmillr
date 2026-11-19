@@ -224,8 +224,6 @@ test_that("export and import round trip through a live server", {
     c(item = "Text", person = "Ref:People", buddies = "RefList:People")
   )
   grist_records_add(
-    src,
-    "People",
     data.frame(
       name = c("Ann", "Bob"),
       age = c(31L, 45L),
@@ -237,16 +235,18 @@ test_that("export and import round trip through a live server", {
       ),
       status = c("on", "off"),
       tags = I(list(c("a", "b"), "a"))
-    )
+    ),
+    src,
+    "People"
   )
   grist_records_add(
-    src,
-    "Orders",
     data.frame(
       item = c("pen", "ink"),
       person = c(2L, 1L),
       buddies = I(list(1:2, 2L))
-    )
+    ),
+    src,
+    "Orders"
   )
 
   exported <- grist_export(src, out, tables = c("People", "Orders"))
@@ -572,8 +572,6 @@ test_that("export and import round trip in CSV and JSON", {
     )
   )
   grist_records_add(
-    src,
-    "Things",
     data.frame(
       name = c('He said "hi", twice\nnewline é', "", "plain"),
       zip = c("02134", "99", ""),
@@ -588,7 +586,9 @@ test_that("export and import round trip in CSV and JSON", {
       status = c("on", "", "off"),
       tags = I(list(c("a", "b"), "a", character())),
       buddy = c(2L, 3L, 1L)
-    )
+    ),
+    src,
+    "Things"
   )
 
   for (format in c("csv", "json")) {

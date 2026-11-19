@@ -96,14 +96,16 @@ test_that("grist_records_add() sends records and returns new IDs", {
     json_resp('{"records":[{"id":7},{"id":8}]}')
   )
 
-  ids <- grist_records_add(
+  out <- grist_records_add(
+    data.frame(name = c("Ann", "Bob"), age = c(1L, NA)),
     test_doc(),
     "People",
-    data.frame(name = c("Ann", "Bob"), age = c(1L, NA)),
     convert = "basic"
   )
 
-  expect_equal(ids, 7:8)
+  expect_equal(out$id, 7:8)
+  expect_equal(names(out), c("id", "name", "age"))
+  expect_equal(out$name, c("Ann", "Bob"))
   expect_equal(httr2::req_get_method(mock$reqs[[1]]), "POST")
   expect_equal(
     as.character(req_body(mock$reqs[[1]])),
@@ -119,15 +121,15 @@ test_that("grist_records_add() splits large writes into chunks", {
     json_resp('{"records":[{"id":5}]}')
   )
 
-  ids <- grist_records_add(
+  out <- grist_records_add(
+    data.frame(x = 1:5),
     test_doc(),
     "People",
-    data.frame(x = 1:5),
     convert = "basic",
     options = grist_write_options(chunk_size = 2)
   )
 
-  expect_equal(ids, 1:5)
+  expect_equal(out$id, 1:5)
   expect_length(mock$reqs, 3)
 })
 
@@ -135,7 +137,7 @@ test_that("grist_records_add() with convert = 'auto' checks column names", {
   local_grist_env()
   local_grist_mock(json_resp(columns_json))
   expect_snapshot(
-    grist_records_add(test_doc(), "People", data.frame(name = "x", nope = 1)),
+    grist_records_add(data.frame(name = "x", nope = 1), test_doc(), "People"),
     error = TRUE
   )
 })
@@ -147,9 +149,9 @@ test_that("grist_records_add() can drop unknown columns", {
     json_resp('{"records":[{"id":1}]}')
   )
   grist_records_add(
+    data.frame(name = "x", nope = 1),
     test_doc(),
     "People",
-    data.frame(name = "x", nope = 1),
     options = grist_write_options(unknown_cols = "drop")
   )
   expect_equal(
@@ -162,9 +164,9 @@ test_that("grist_records_add() converts dates for Grist", {
   local_grist_env()
   mock <- local_grist_mock(json_resp('{"records":[{"id":1}]}'))
   grist_records_add(
+    data.frame(born = as.Date("1990-01-01")),
     test_doc(),
     "People",
-    data.frame(born = as.Date("1990-01-01")),
     convert = "basic"
   )
   expect_equal(
@@ -176,11 +178,11 @@ test_that("grist_records_add() converts dates for Grist", {
 test_that("grist_records_add() rejects an id column", {
   local_grist_env()
   expect_snapshot(
-    grist_records_add(test_doc(), "People", data.frame(id = 1, x = 1)),
+    grist_records_add(data.frame(id = 1, x = 1), test_doc(), "People"),
     error = TRUE
   )
   expect_snapshot(
-    grist_records_add(test_doc(), "People", list(x = 1)),
+    grist_records_add(list(x = 1), test_doc(), "People"),
     error = TRUE
   )
 })
@@ -217,9 +219,9 @@ test_that("grist_records_delete() accepts IDs or a data frame", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
 
-  grist_records_delete(test_doc(), "People", c(3, 4))
-  grist_records_delete(test_doc(), "People", data.frame(id = 5L))
-  grist_records_delete(test_doc(), "People", 6L)
+  grist_records_delete(c(3, 4), test_doc(), "People")
+  grist_records_delete(data.frame(id = 5L), test_doc(), "People")
+  grist_records_delete(6L, test_doc(), "People")
 
   expect_match(mock$reqs[[1]]$url, "records/delete$")
   expect_equal(as.character(req_body(mock$reqs[[1]])), "[3,4]")
@@ -227,11 +229,35 @@ test_that("grist_records_delete() accepts IDs or a data frame", {
   expect_equal(as.character(req_body(mock$reqs[[3]])), "[6]")
 })
 
+test_that("grist_records_add() keeps the class of data and can be piped", {
+  local_grist_env()
+  local_grist_mock(json_resp('{"records":[{"id":7},{"id":8}]}'))
+
+  data <- new_tbl(list(name = c("Ann", "Bob")), n = 2L)
+  out <- data |> grist_records_add(test_doc(), "People", convert = "basic")
+
+  expect_s3_class(out, "tbl_df")
+  expect_equal(out$id, 7:8)
+  expect_equal(names(out), c("id", "name"))
+})
+
+test_that("grist_records_delete() returns its input unchanged", {
+  local_grist_env()
+  local_grist_mock(json_resp(""))
+
+  ids <- c(3, 4)
+  expect_identical(grist_records_delete(ids, test_doc(), "People"), ids)
+  expect_false(withVisible(grist_records_delete(ids, test_doc(), "People"))$visible)
+
+  data <- data.frame(id = 5L, name = "x")
+  expect_identical(grist_records_delete(data, test_doc(), "People"), data)
+})
+
 test_that("grist_records_delete() validates ids", {
   local_grist_env()
-  expect_snapshot(grist_records_delete(test_doc(), "People", "a"), error = TRUE)
+  expect_snapshot(grist_records_delete("a", test_doc(), "People"), error = TRUE)
   expect_snapshot(
-    grist_records_delete(test_doc(), "People", data.frame(x = 1)),
+    grist_records_delete(data.frame(x = 1), test_doc(), "People"),
     error = TRUE
   )
 })
@@ -282,7 +308,7 @@ test_that("grist_records_delete() rejects ids that would be truncated", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
   expect_error(
-    grist_records_delete(test_doc(), "People", 1.5),
+    grist_records_delete(1.5, test_doc(), "People"),
     class = "gristmillr_invalid_ids"
   )
   expect_length(mock$reqs, 0)
@@ -293,11 +319,11 @@ test_that("empty writes make no requests", {
   mock <- local_grist_mock(json_resp("{}"))
   expect_equal(
     grist_records_add(
+      data.frame(name = character()),
       test_doc(),
       "People",
-      data.frame(name = character()),
       convert = "basic"
-    ),
+    )$id,
     integer()
   )
   expect_length(mock$reqs, 0)
@@ -454,8 +480,8 @@ test_that("write options `parse = FALSE` sends noparse", {
   opts <- grist_write_options(parse = FALSE)
   data <- data.frame(name = "Ann")
 
-  grist_records_add(test_doc(), "People", data, convert = "basic")
-  grist_records_add(test_doc(), "People", data, convert = "basic", options = opts)
+  grist_records_add(data, test_doc(), "People", convert = "basic")
+  grist_records_add(data, test_doc(), "People", convert = "basic", options = opts)
   grist_records_update(
     test_doc(),
     "People",
@@ -484,9 +510,9 @@ test_that("convert = 'raw' sends missing values as null", {
   mock <- local_grist_mock(json_resp('{"records":[{"id":1},{"id":2}]}'))
 
   grist_records_add(
+    data.frame(age = c(1, NA)),
     test_doc(),
     "People",
-    data.frame(age = c(1, NA)),
     convert = "raw"
   )
 

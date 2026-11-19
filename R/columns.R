@@ -177,7 +177,10 @@ columns_spec <- function(columns, call = caller_env()) {
         fields[[column_field_names[[nm]]]] <- value
       }
     }
-    list(id = columns$id[[i]], fields = fields %||% empty_object())
+    list(
+      id = columns$id[[i]],
+      fields = if (length(fields) > 0) fields else empty_object()
+    )
   })
 }
 

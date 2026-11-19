@@ -236,6 +236,58 @@ test_that("grist_records_delete() validates ids", {
   )
 })
 
+test_that("as_row_ids() accepts only lossless integer conversions", {
+  expect_equal(as_row_ids(c(1, 2L)), c(1L, 2L))
+  expect_equal(as_row_ids(c("3", "4")), c(3L, 4L))
+  expect_equal(as_row_ids(integer()), integer())
+
+  expect_error(as_row_ids(1.5), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids("1.5"), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids("1e2"), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids(NA_integer_), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids(c(1, NA)), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids("a"), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids(TRUE), class = "gristmillr_invalid_ids")
+  expect_error(as_row_ids(factor("1")), class = "gristmillr_invalid_ids")
+})
+
+test_that("grist_records_update() validates and converts ids", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp("{}"))
+
+  grist_records_update(
+    test_doc(),
+    "People",
+    data.frame(id = c(1, 2), age = 3:4),
+    convert = "basic"
+  )
+  expect_equal(
+    req_body_sent(mock$reqs[[1]]),
+    '{"records":[{"id":1,"fields":{"age":3}},{"id":2,"fields":{"age":4}}]}'
+  )
+
+  expect_snapshot(
+    grist_records_update(
+      test_doc(),
+      "People",
+      data.frame(id = c(1, 1.5), age = 3:4),
+      convert = "basic"
+    ),
+    error = TRUE
+  )
+  expect_length(mock$reqs, 1)
+})
+
+test_that("grist_records_delete() rejects ids that would be truncated", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp(""))
+  expect_error(
+    grist_records_delete(test_doc(), "People", 1.5),
+    class = "gristmillr_invalid_ids"
+  )
+  expect_length(mock$reqs, 0)
+})
+
 test_that("empty writes make no requests", {
   local_grist_env()
   mock <- local_grist_mock(json_resp("{}"))
@@ -425,4 +477,21 @@ test_that("write options `parse = FALSE` sends noparse", {
   expect_equal(noparse(2), "true")
   expect_equal(noparse(3), "true")
   expect_equal(noparse(4), "true")
+})
+
+test_that("convert = 'raw' sends missing values as null", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp('{"records":[{"id":1},{"id":2}]}'))
+
+  grist_records_add(
+    test_doc(),
+    "People",
+    data.frame(age = c(1, NA)),
+    convert = "raw"
+  )
+
+  expect_equal(
+    req_body_sent(mock$reqs[[1]]),
+    '{"records":[{"fields":{"age":1}},{"fields":{"age":null}}]}'
+  )
 })

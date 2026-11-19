@@ -179,6 +179,8 @@ grist_records_update <- function(
     )
   }
 
+  data$id <- as_row_ids(data$id, arg = "data$id")
+
   data <- prepare_write_data(doc, table, data, convert, options)
   records <- df_to_records(data, with_id = TRUE, convert = convert)
 
@@ -305,12 +307,7 @@ grist_records_delete <- function(doc, table, ids, options = NULL) {
     }
     ids <- ids$id
   }
-  if (!is.numeric(ids) || anyNA(ids)) {
-    cli::cli_abort(
-      "{.arg ids} must be a numeric vector without missing values, not {.obj_type_friendly {ids}}."
-    )
-  }
-  ids <- as.integer(ids)
+  ids <- as_row_ids(ids)
 
   for (chunk in chunk_rows(length(ids), options@chunk_size)) {
     grist_request(doc, "tables", table, "records", "delete") |>
@@ -319,6 +316,34 @@ grist_records_delete <- function(doc, table, ids, options = NULL) {
       grist_perform()
   }
   invisible(doc)
+}
+
+# Row IDs as integers. Numbers and strings are accepted if they convert to an
+# integer without loss, so `1`, `1L` and `"1"` pass but `1.5`, `"1.5"`, `NA`
+# and `"a"` don't.
+as_row_ids <- function(x, arg = caller_arg(x), call = caller_env()) {
+  ids <- if (is.character(x)) {
+    ids <- suppressWarnings(as.integer(x))
+    ids[!is.na(ids) & as.character(ids) != x] <- NA_integer_
+    ids
+  } else if (is.numeric(x)) {
+    try_fetch(
+      vctrs::vec_cast(x, integer()),
+      vctrs_error_cast = function(cnd) rep(NA_integer_, length(x))
+    )
+  }
+
+  if (is.null(ids) || anyNA(ids)) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must be whole numbers without missing values.",
+        i = "Got {.obj_type_friendly {x}}."
+      ),
+      class = "gristmillr_invalid_ids",
+      call = call
+    )
+  }
+  ids
 }
 
 prepare_write_data <- function(

@@ -82,7 +82,8 @@
       grist_records_delete(test_doc(), "People", "a")
     Condition
       Error in `grist_records_delete()`:
-      ! `ids` must be a numeric vector without missing values, not a string.
+      ! `ids` must be whole numbers without missing values.
+      i Got a string.
 
 ---
 
@@ -91,6 +92,16 @@
     Condition
       Error in `grist_records_delete()`:
       ! `ids` must have an id column.
+
+# grist_records_update() validates and converts ids
+
+    Code
+      grist_records_update(test_doc(), "People", data.frame(id = c(1, 1.5), age = 3:4),
+      convert = "basic")
+    Condition
+      Error in `grist_records_update()`:
+      ! `data$id` must be whole numbers without missing values.
+      i Got a double vector.
 
 # grist_records_upsert() validates by and data
 

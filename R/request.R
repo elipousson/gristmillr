@@ -112,7 +112,9 @@ grist_error_body <- function(resp) {
   if (!is.list(body)) {
     return(NULL)
   }
-  c(body$error, body$details)
+  # `details` can be a nested object, such as `list(userError = "...")`, but
+  # httr2 requires a character vector.
+  as.character(unlist(c(body$error, body$details), use.names = FALSE))
 }
 
 # Perform a request, turning HTTP errors into gristmillr errors. Returns the
@@ -144,7 +146,8 @@ grist_perform <- function(req, call = caller_env()) {
 # Doc-scoped request helpers ----------------------------------------------
 
 req_json_body <- function(req, data) {
-  httr2::req_body_json(req, data, auto_unbox = TRUE, null = "null")
+  # jsonlite writes numeric `NA` as the string "NA" unless `na = "null"`.
+  httr2::req_body_json(req, data, auto_unbox = TRUE, null = "null", na = "null")
 }
 
 # Convert a vector or list into the strict JSON shape Grist expects.

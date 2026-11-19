@@ -28,6 +28,14 @@ req_body <- function(req) {
   jsonlite::toJSON(req$body$data, auto_unbox = TRUE, null = "null")
 }
 
+# The JSON body as it is sent, unlike `req_body()`, which re-serializes it.
+req_body_sent <- function(req) {
+  as.character(rlang::inject(jsonlite::toJSON(
+    req$body$data,
+    !!!req$body$params
+  )))
+}
+
 local_grist_env <- function(.env = parent.frame()) {
   withr::local_envvar(
     GRIST_API_KEY = "test-key",

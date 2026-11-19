@@ -45,6 +45,18 @@ test_that("columns_spec() serializes empty fields as an object", {
   expect_equal(as.character(json), '[{"id":"a","fields":{}}]')
 })
 
+test_that("columns_spec() serializes empty data frame fields as an object", {
+  spec <- columns_spec(data.frame(id = c("a", "b"), type = c("Int", NA)))
+  json <- jsonlite::toJSON(spec, auto_unbox = TRUE)
+  expect_equal(
+    as.character(json),
+    '[{"id":"a","fields":{"type":"Int"}},{"id":"b","fields":{}}]'
+  )
+
+  json <- jsonlite::toJSON(columns_spec(data.frame(id = "a")), auto_unbox = TRUE)
+  expect_equal(as.character(json), '[{"id":"a","fields":{}}]')
+})
+
 test_that("columns_spec() validates input", {
   expect_snapshot(columns_spec(1), error = TRUE)
   expect_snapshot(columns_spec(data.frame(x = 1)), error = TRUE)

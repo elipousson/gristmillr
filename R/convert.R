@@ -273,19 +273,6 @@ list_cell <- function(x) {
   c(list("L"), as.list(x))
 }
 
-check_data_frame <- function(
-  data,
-  arg = caller_arg(data),
-  call = caller_env()
-) {
-  if (!is.data.frame(data)) {
-    cli::cli_abort(
-      "{.arg {arg}} must be a data frame, not {.obj_type_friendly {data}}.",
-      call = call
-    )
-  }
-}
-
 # Build the `records` payload from a data frame. When `with_id`, an `id` column
 # is required and sent as the record ID.
 df_to_records <- function(data, with_id = FALSE, convert = "auto") {

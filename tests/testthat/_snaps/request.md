@@ -43,3 +43,15 @@
       Error in `grist_request()`:
       ! The `api_key` function must return a single string, not a number.
 
+# nested error details are flattened into the error message
+
+    Code
+      grist_tables(test_doc())
+    Condition
+      Error in `grist_tables()`:
+      ! Grist request failed with HTTP status 400.
+      Caused by error in `httr2::req_perform()`:
+      ! HTTP 400 Bad Request.
+      Invalid payload
+      body.records[0].id is not a number
+

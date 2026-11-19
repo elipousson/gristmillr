@@ -127,3 +127,30 @@ test_that("printing options never shows the key", {
   expect_false(any(grepl("super-secret-key", out)))
   expect_match(paste(out, collapse = "\n"), "REDACTED")
 })
+
+test_that("nested error details are flattened into the error message", {
+  local_grist_env()
+  local_grist_mock(
+    json_resp(
+      paste0(
+        '{"error":"Invalid payload",',
+        '"details":{"userError":"body.records[0].id is not a number"}}'
+      ),
+      status = 400L
+    )
+  )
+
+  expect_error(grist_tables(test_doc()), class = "gristmillr_http_error")
+  expect_snapshot(grist_tables(test_doc()), error = TRUE)
+})
+
+test_that("grist_error_body() returns a character vector", {
+  resp <- json_resp('{"error":"a","details":{"userError":"b"}}', status = 400L)
+  expect_equal(grist_error_body(resp), c("a", "b"))
+  expect_null(grist_error_body(json_resp("not json", status = 500L)))
+})
+
+test_that("req_json_body() writes NA as null", {
+  req <- req_json_body(httr2::request("https://example.com"), list(x = NA_real_))
+  expect_equal(req_body_sent(req), '{"x":null}')
+})

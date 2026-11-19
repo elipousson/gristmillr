@@ -41,6 +41,69 @@ descriptions, history, export and import.
 - [ ] A `gristapi` migration vignette. The README has a short function table.
   `grist_records_upsert()` is the equivalent of `sync_table()`.
 
+## Review follow-ups
+
+Findings from the code review that aren't fixed yet.
+
+Behavior and design:
+
+- [ ] Path segments aren't validated or escaped (`req_grist()`). Table IDs and
+  webhook IDs go into the URL as given, so `grist_records(doc, "a/../b")`
+  reaches another endpoint. Validate table IDs against `[A-Za-z0-9_]`.
+- [ ] `grist_export()` hides every error from `grist_doc_history()` with
+  `tryCatch()` (`R/export.R`), including authentication and network failures.
+- [ ] `grist_export()` requests each table's columns twice, because
+  `grist_records(convert = "auto")` fetches them again.
+- [ ] `grist_import()` returns a named `columns` vector. Unname it, as `rows`
+  already is.
+- [ ] `grist_import()` matches keys with `as.character()`, so a key stored as a
+  double in one table and an integer in another (`1e+05` and `100000`) can
+  fail to match.
+- [ ] `check_ask()`: `ask = NULL` and `ask = TRUE` behave the same, and `mode`
+  and `verb` overlap. Simplify the arguments.
+- [ ] `columns_spec()` fails with R's `'length = 2' in coercion to
+  'logical(1)'` for a list-column value. Check for a scalar first.
+- [ ] `grist_import()` isn't atomic. A failure leaves created tables and rows
+  in place (see Known limitations).
+- [ ] The print methods use `cli_text()`, which writes to stderr, so
+  `capture.output(print(doc))` is empty. Consider `cli::cat_line()`.
+- [ ] `new_tbl()` builds `tbl_df` objects without the tibble package. Decide
+  whether to keep that or depend on tibble.
+
+Interface consistency:
+
+- [ ] `hidden` and `col_names` are read options in `grist_records()` but direct
+  arguments in `grist_columns()`, `grist_doc_download()` and
+  `grist_table_schema()`.
+- [ ] Server-level functions (`grist_orgs()`, `grist_workspaces()`,
+  `grist_docs()` and the workspace functions) take `options` but no `api_key`,
+  unlike `grist_doc()`.
+- [ ] `grist_doc_import(path, workspace)` takes `path` first, unlike the rest.
+- [ ] `grist_export()` writes to `"."` by default, so a call with no `to`
+  writes files into the working directory.
+
+Tests:
+
+- [ ] The live-test guard checks that `GRIST_API_KEY` and `GRIST_SERVER` are set
+  but not that the server answers, so a stale `.Renviron` fails the suite.
+- [ ] Review the test suite itself (the `review-testing` skill). Only the
+  production code has been reviewed.
+
+Style and housekeeping:
+
+- [ ] Lint and format long lines. `air` isn't on the PATH of the shell Claude
+  Code uses, so `air format --check` hasn't run. `lintr` flags lines over 80
+  characters in `tests/` and `vignettes/`.
+- [ ] `grist_export()` has a variable named `summary` that shadows
+  `base::summary()`, and `dict_table()` assigns with `<<-`.
+- [ ] Move shared helpers out of `convert.R` into a `utils.R`.
+- [ ] `.Rbuildignore` lists `air.toml`, which doesn't exist. Run `air init`.
+- [ ] Pin a minimum S7 version in `DESCRIPTION`, and replace the development
+  `Config/roxygen2/version`.
+- [ ] Reorder `NEWS.md` (the newest items first) and wrap long lines.
+- [ ] Re-knit `README.Rmd` against a live server after the API changes, and
+  update the vignettes and the README function table.
+
 ## Records API redesign
 
 Make the record writes data-first and type-stable, modelled on dplyr's
@@ -50,19 +113,19 @@ way. Schema, read and document functions stay doc-first. Do this as one pass
 that also updates the README, vignettes, examples and tests, and run the live
 tests.
 
-- [ ] `grist_records_add(data, doc, table, ...)` returns `data` with the new
+- [x] `grist_records_add(data, doc, table, ...)` returns `data` with the new
   `id` column filled in, invisibly.
 - [ ] `grist_records_insert(data, doc, table, by, ...)` adds rows whose `by`
   key isn't in the table and skips the rest (`rows_insert(conflict = "ignore")`,
   `PUT` with `noupdate`). Grist doesn't report which rows were skipped.
-- [ ] `grist_records_update(data, doc, table, by = "id", unmatched = c("error",
+- [x] `grist_records_update(data, doc, table, by = "id", unmatched = c("error",
   "ignore"), multiple, ...)`. `by = "id"` uses `PATCH`, where Grist errors on a
   missing row. Other `by` columns use `PUT` with `noadd`, which can only
   `"ignore"` unmatched rows, so `unmatched = "error"` isn't allowed there.
   Document this rather than pre-reading the table, which would be an extra
   request and racy.
 - [ ] `grist_records_upsert(data, doc, table, by, multiple, ...)`.
-- [ ] `grist_records_delete(data, doc, table, ...)`: `data` is a data frame
+- [x] `grist_records_delete(data, doc, table, ...)`: `data` is a data frame
   with an `id` column or a vector of IDs, returned unchanged, invisibly.
   Deletes by row ID only.
 - [ ] Rename `onmany` to `multiple` (`"first"`, `"all"`, `"none"`), after

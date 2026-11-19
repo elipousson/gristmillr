@@ -11,7 +11,9 @@ Read and write data in 'Grist' \url{https://www.getgrist.com/} documents using t
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://github.com/elipousson/gristmillr}
   \item \url{https://elipousson.github.io/gristmillr/}
+  \item Report bugs at \url{https://github.com/elipousson/gristmillr/issues}
 }
 
 }

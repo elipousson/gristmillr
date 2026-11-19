@@ -35,23 +35,29 @@ doc <- grist_doc("<doc id or URL>")
 
 ``` r
 grist_tables(doc)
-#>       id table_ref on_demand
-#> 1 Table1         1     FALSE
-#> 2 People         2     FALSE
+#> # A data frame: 2 × 3
+#>   id     table_ref on_demand
+#>   <chr>      <int> <lgl>    
+#> 1 Table1         1 FALSE    
+#> 2 People         2 FALSE
 
 doc |>
   grist_records("People", filter = list(status = "active"), sort = "-age")
-#>   id name age status
-#> 1  1  Ann  31 active
-#> 2  3   Cy  28 active
+#> # A data frame: 2 × 4
+#>      id name    age status
+#>   <int> <chr> <int> <chr> 
+#> 1     1 Ann      31 active
+#> 2     3 Cy       28 active
 
-doc |>
-  grist_records_add("People", data.frame(name = "Dee", age = 52L, status = "active"))
+data.frame(name = "Dee", age = 52L, status = "active") |>
+  grist_records_add(doc, "People")
 
 grist_sql(doc, "SELECT status, COUNT(*) AS n FROM People GROUP BY status")
-#>    status n
-#> 1  active 3
-#> 2 pending 1
+#> # A data frame: 2 × 2
+#>   status      n
+#>   <chr>   <int>
+#> 1 active      3
+#> 2 pending     1
 ```
 
 To move data in or out, `grist_export()` writes tables to Parquet, CSV

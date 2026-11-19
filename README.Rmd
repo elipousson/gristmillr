@@ -48,15 +48,12 @@ devtools::load_all(quiet = TRUE)
 workspace <- grist_workspaces()$id[[1]]
 doc <- grist_doc_create(workspace, "gristmillr README")
 grist_table_create(doc, "People", c(name = "Text", age = "Int", status = "Choice"))
-grist_records_add(
-  doc,
-  "People",
-  data.frame(
-    name = c("Ann", "Bob", "Cy"),
-    age = c(31L, 45L, 28L),
-    status = c("active", "pending", "active")
-  )
-)
+data.frame(
+  name = c("Ann", "Bob", "Cy"),
+  age = c(31L, 45L, 28L),
+  status = c("active", "pending", "active")
+) |>
+  grist_records_add(doc, "People")
 ```
 
 ```{r}
@@ -65,8 +62,8 @@ grist_tables(doc)
 doc |>
   grist_records("People", filter = list(status = "active"), sort = "-age")
 
-doc |>
-  grist_records_add("People", data.frame(name = "Dee", age = 52L, status = "active"))
+data.frame(name = "Dee", age = 52L, status = "active") |>
+  grist_records_add(doc, "People")
 
 grist_sql(doc, "SELECT status, COUNT(*) AS n FROM People GROUP BY status")
 ```

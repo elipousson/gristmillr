@@ -17,9 +17,12 @@
   `grist_columns_add()` and `grist_columns_modify()` read and change a
   document's schema.
 * `grist_records()`, `grist_records_add()`, `grist_records_update()`,
-  `grist_records_upsert()` and `grist_records_delete()` read and write records with a `convert` enum
-  (`"auto"`, `"basic"` or `"raw"`). `grist_sql()` and `grist_count()` run SQL
-  queries.
+  `grist_records_insert()`, `grist_records_upsert()` and
+  `grist_records_delete()` read and write records with a `convert` enum
+  (`"auto"`, `"basic"` or `"raw"`). The writing functions take `data` first
+  and return it, so they can be piped, and `grist_records_add()` returns it
+  with the new row IDs in an `id` column. `grist_sql()` and `grist_count()`
+  run SQL queries.
 * `grist_doc_create()`, `grist_doc_info()`, `grist_doc_update()`,
   `grist_doc_move()`, `grist_doc_delete()` and `grist_doc_restore()` manage
   documents, and `grist_orgs()`, `grist_workspaces()`, `grist_docs()` and
@@ -47,8 +50,10 @@
 * `grist_doc_info()` returns `created_at` and `updated_at`. `grist_orgs()` now
   returns its timestamps as `POSIXct` in UTC rather than strings.
 * `vignette("gristmillr")` is a getting-started guide.
-* `grist_records_upsert()` updates and adds records by matching on key columns
-  (`by`), with `mode` and `onmany` enums. It never deletes records.
+* `grist_records_update()`, `grist_records_upsert()` and
+  `grist_records_insert()` match records on key columns (`by`), with
+  `unmatched` and `multiple` enums as in dplyr's `rows_*()` functions. None
+  of them delete records.
 * `grist_records()` no longer fails on an empty table with untyped (`Any`)
   columns.
 * `grist_export()` writes a document's tables to Parquet, CSV or JSON files and a

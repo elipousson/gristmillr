@@ -101,8 +101,9 @@ Style and housekeeping:
 - [ ] Pin a minimum S7 version in `DESCRIPTION`, and replace the development
   `Config/roxygen2/version`.
 - [ ] Reorder `NEWS.md` (the newest items first) and wrap long lines.
-- [ ] Re-knit `README.Rmd` against a live server after the API changes, and
-  update the vignettes and the README function table.
+- [x] Re-knit `README.Rmd` against a live server after the API changes, and
+  update the vignettes. The README output now prints with pillar's
+  `# A data frame:` header because pillar was installed when it was knit.
 
 ## Records API redesign
 
@@ -115,7 +116,7 @@ tests.
 
 - [x] `grist_records_add(data, doc, table, ...)` returns `data` with the new
   `id` column filled in, invisibly.
-- [ ] `grist_records_insert(data, doc, table, by, ...)` adds rows whose `by`
+- [x] `grist_records_insert(data, doc, table, by, ...)` adds rows whose `by`
   key isn't in the table and skips the rest (`rows_insert(conflict = "ignore")`,
   `PUT` with `noupdate`). Grist doesn't report which rows were skipped.
 - [x] `grist_records_update(data, doc, table, by = "id", unmatched = c("error",
@@ -124,13 +125,13 @@ tests.
   `"ignore"` unmatched rows, so `unmatched = "error"` isn't allowed there.
   Document this rather than pre-reading the table, which would be an extra
   request and racy.
-- [ ] `grist_records_upsert(data, doc, table, by, multiple, ...)`.
+- [x] `grist_records_upsert(data, doc, table, by, multiple, ...)`.
 - [x] `grist_records_delete(data, doc, table, ...)`: `data` is a data frame
   with an `id` column or a vector of IDs, returned unchanged, invisibly.
   Deletes by row ID only.
-- [ ] Rename `onmany` to `multiple` (`"first"`, `"all"`, `"none"`), after
+- [x] Rename `onmany` to `multiple` (`"first"`, `"all"`, `"none"`), after
   `left_join(multiple = )`.
-- [ ] Drop `mode` from `grist_records_upsert()`, which `grist_records_insert()`
+- [x] Drop `mode` from `grist_records_upsert()`, which `grist_records_insert()`
   and the `unmatched` argument of `grist_records_update()` replace.
 - [ ] Decide return values for the schema and document functions in the same
   pass. They should follow the same rule, and `grist_workspace_*()` return an

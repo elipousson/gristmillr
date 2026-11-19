@@ -118,27 +118,38 @@ The `convert` argument controls how Grist cell values become R vectors:
 
 ## Write data
 
-Writes take a data frame and are converted the same way:
+Writes take a data frame first and return it, so they work in pipelines. Data
+is converted the same way as when reading:
 
 ```{r}
 new <- data.frame(name = c("Ann", "Bob"), age = c(31L, 45L))
-ids <- grist_records_add(doc, "People", new)
 
-# Returns the new row IDs. Updates need an `id` column
-grist_records_update(doc, "People", data.frame(id = ids[[1]], age = 32L))
+# The result is `new` with the row IDs Grist assigned in an `id` column
+added <- new |> grist_records_add(doc, "People")
 
-grist_records_delete(doc, "People", ids)
+# Updates match on the `id` column
+data.frame(id = added$id[[1]], age = 32L) |>
+  grist_records_update(doc, "People")
+
+added |> grist_records_delete(doc, "People")
 ```
 
-To match on a column rather than the row `id`, use `grist_records_upsert()`.
-It updates records whose `by` values match and adds the rest, and never
-deletes anything. `mode = "update"` or `"insert"` limits it to one of the two,
-and `onmany` says what to do if several records match one row.
+To match on a column rather than the row `id`, set `by`.
+`grist_records_upsert()` updates records whose `by` values match and adds the
+rest. `grist_records_insert()` only adds the rows with no match, and
+`grist_records_update()` only updates the rows that match. None of them delete
+anything, and `multiple` says what to do if several records match one row.
 
 ```{r}
 latest <- data.frame(name = c("Ann", "Cy"), age = c(32L, 28L))
-grist_records_upsert(doc, "People", latest, by = "name")
+latest |> grist_records_upsert(doc, "People", by = "name")
+latest |> grist_records_insert(doc, "People", by = "name")
+latest |> grist_records_update(doc, "People", by = "name", unmatched = "ignore")
 ```
+
+Grist doesn't say which rows it skipped, so a key-based update needs
+`unmatched = "ignore"`. Updating by `id` errors if a row doesn't exist, which
+is the default `unmatched = "error"`.
 
 Large writes are sent in chunks. With `convert = "auto"`, a column that doesn't
 exist in the table is an error, so typos surface before anything is sent.
@@ -161,7 +172,12 @@ stay short:
 doc <- grist_doc("<doc id>", options = grist_request_options(timeout = 60))
 
 grist_records(doc, "People", options = grist_read_options(col_names = "label"))
-grist_records_add(doc, "People", new, options = grist_write_options(chunk_size = 100))
+new |>
+  grist_records_add(
+    doc,
+    "People",
+    options = grist_write_options(chunk_size = 100)
+  )
 ```
 
 Set defaults for a whole session with

@@ -42,11 +42,15 @@
 - [`grist_records()`](https://elipousson.github.io/gristmillr/reference/grist_records.md),
   [`grist_records_add()`](https://elipousson.github.io/gristmillr/reference/grist_records.md),
   [`grist_records_update()`](https://elipousson.github.io/gristmillr/reference/grist_records.md),
+  [`grist_records_insert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md),
   [`grist_records_upsert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   and
   [`grist_records_delete()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   read and write records with a `convert` enum (`"auto"`, `"basic"` or
-  `"raw"`).
+  `"raw"`). The writing functions take `data` first and return it, so
+  they can be piped, and
+  [`grist_records_add()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
+  returns it with the new row IDs in an `id` column.
   [`grist_sql()`](https://elipousson.github.io/gristmillr/reference/grist_sql.md)
   and
   [`grist_count()`](https://elipousson.github.io/gristmillr/reference/grist_sql.md)
@@ -129,9 +133,12 @@
 - [`vignette("gristmillr")`](https://elipousson.github.io/gristmillr/articles/gristmillr.md)
   is a getting-started guide.
 
-- [`grist_records_upsert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
-  updates and adds records by matching on key columns (`by`), with
-  `mode` and `onmany` enums. It never deletes records.
+- [`grist_records_update()`](https://elipousson.github.io/gristmillr/reference/grist_records.md),
+  [`grist_records_upsert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
+  and
+  [`grist_records_insert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
+  match records on key columns (`by`), with `unmatched` and `multiple`
+  enums as in dplyr’s `rows_*()` functions. None of them delete records.
 
 - [`grist_records()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   no longer fails on an empty table with untyped (`Any`) columns.

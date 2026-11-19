@@ -1,8 +1,24 @@
 # Read, add, update and delete records
 
 `grist_records()` reads records from a table into a data frame. The
-other functions write data frames back to Grist. Large writes are split
-into several requests (see
+other functions write data frames back to Grist. They are modelled on
+dplyr's `rows_*()` functions, and take `data` first and return it, so
+they can be piped:
+
+- `grist_records_add()` adds records.
+
+- `grist_records_update()` updates records, matched by row ID or by
+  `by`.
+
+- `grist_records_upsert()` updates records matched on `by` and adds the
+  others.
+
+- `grist_records_insert()` adds only the records with no match on `by`.
+
+- `grist_records_delete()` deletes records.
+
+For the functions that match on `by`, Grist doesn't report which rows it
+skipped. Large writes are split into several requests (see
 [`grist_write_options()`](https://elipousson.github.io/gristmillr/reference/grist-options.md)).
 
 ## Usage
@@ -38,12 +54,20 @@ grist_records_update(
 )
 
 grist_records_upsert(
+  data,
   doc,
   table,
-  data,
   by,
-  mode = c("upsert", "update", "insert"),
-  onmany = c("first", "all", "none"),
+  multiple = c("first", "all", "none"),
+  convert = c("auto", "basic", "raw"),
+  options = NULL
+)
+
+grist_records_insert(
+  data,
+  doc,
+  table,
+  by,
   convert = c("auto", "basic", "raw"),
   options = NULL
 )
@@ -124,30 +148,15 @@ grist_records_delete(data, doc, table, options = NULL)
 
   What to do when several records in the table match one row of `data`:
   update the `"first"` one, update `"all"` of them, or update `"none"`
-  of them. Only used when `by` is not `"id"`.
-
-- mode:
-
-  What to do with each row of `data`: `"upsert"` updates the record with
-  matching `by` values and adds a record if there is none. `"update"`
-  only updates matching records and skips rows that match nothing.
-  `"insert"` only adds records and skips rows that already match. Grist
-  does not report which rows were skipped.
-
-- onmany:
-
-  What to do when several records in the table match one row of `data`:
-  update the `"first"` one, update `"all"` of them, or update `"none"`
-  of them.
+  of them. Used when `by` is not `"id"`, but not by
+  `grist_records_insert()`, which never updates.
 
 ## Value
 
 `grist_records()` returns a data frame whose first column `id` is the
 row ID. `grist_records_add()` returns `data` with a new first column
-`id` holding the row IDs Grist assigned. `grist_records_delete()`
-returns `data` unchanged. `grist_records_update()` and
-`grist_records_upsert()` return `doc`. All but `grist_records()` return
-invisibly.
+`id` holding the row IDs Grist assigned. The other writing functions
+return `data` unchanged. All but `grist_records()` return invisibly.
 
 ## Type conversion
 
@@ -207,7 +216,10 @@ data.frame(pet = "cat", popularity = 70L) |>
 
 # Match on a column instead of the row ID: update cats, add rabbits
 pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
-grist_records_upsert(doc, "Pets", pets, by = "pet")
+pets |> grist_records_upsert(doc, "Pets", by = "pet")
+
+# Add only the pets that aren't in the table yet
+pets |> grist_records_insert(doc, "Pets", by = "pet")
 
 added |> grist_records_delete(doc, "Pets")
 }

@@ -9,7 +9,11 @@ classes so they work well in tidyverse-style pipelines.
 
 Useful links:
 
+- <https://github.com/elipousson/gristmillr>
+
 - <https://elipousson.github.io/gristmillr/>
+
+- Report bugs at <https://github.com/elipousson/gristmillr/issues>
 
 ## Author
 

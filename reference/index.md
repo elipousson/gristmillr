@@ -27,6 +27,7 @@ Create handles for documents and manage them.
   [`grist_records_add()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   [`grist_records_update()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   [`grist_records_upsert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
+  [`grist_records_insert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   [`grist_records_delete()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
   : Read, add, update and delete records
 - [`grist_sql()`](https://elipousson.github.io/gristmillr/reference/grist_sql.md)

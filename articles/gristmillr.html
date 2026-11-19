@@ -166,24 +166,35 @@ and joining them.</p>
 <div class="section level2">
 <h2 id="write-data">Write data<a class="anchor" aria-label="anchor" href="#write-data"></a>
 </h2>
-<p>Writes take a data frame and are converted the same way:</p>
+<p>Writes take a data frame first and return it, so they work in
+pipelines. Data is converted the same way as when reading:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ann"</span>, <span class="st">"Bob"</span><span class="op">)</span>, age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">31L</span>, <span class="fl">45L</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/grist_records.html">grist_records_add</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, <span class="va">new</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Returns the new row IDs. Updates need an `id` column</span></span>
-<span><span class="fu"><a href="../reference/grist_records.html">grist_records_update</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="va">ids</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, age <span class="op">=</span> <span class="fl">32L</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># The result is `new` with the row IDs Grist assigned in an `id` column</span></span>
+<span><span class="va">added</span> <span class="op">&lt;-</span> <span class="va">new</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/grist_records.html">grist_records_add</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/grist_records.html">grist_records_delete</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, <span class="va">ids</span><span class="op">)</span></span></code></pre></div>
-<p>To match on a column rather than the row <code>id</code>, use
-<code><a href="../reference/grist_records.html">grist_records_upsert()</a></code>. It updates records whose
-<code>by</code> values match and adds the rest, and never deletes
-anything. <code>mode = "update"</code> or <code>"insert"</code> limits
-it to one of the two, and <code>onmany</code> says what to do if several
-records match one row.</p>
+<span><span class="co"># Updates match on the `id` column</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="va">added</span><span class="op">$</span><span class="va">id</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, age <span class="op">=</span> <span class="fl">32L</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/grist_records.html">grist_records_update</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">added</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/grist_records.html">grist_records_delete</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span><span class="op">)</span></span></code></pre></div>
+<p>To match on a column rather than the row <code>id</code>, set
+<code>by</code>. <code><a href="../reference/grist_records.html">grist_records_upsert()</a></code> updates records
+whose <code>by</code> values match and adds the rest.
+<code><a href="../reference/grist_records.html">grist_records_insert()</a></code> only adds the rows with no match,
+and <code><a href="../reference/grist_records.html">grist_records_update()</a></code> only updates the rows that
+match. None of them delete anything, and <code>multiple</code> says what
+to do if several records match one row.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">latest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Ann"</span>, <span class="st">"Cy"</span><span class="op">)</span>, age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">32L</span>, <span class="fl">28L</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/grist_records.html">grist_records_upsert</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, <span class="va">latest</span>, by <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">latest</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/grist_records.html">grist_records_upsert</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, by <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span>
+<span><span class="va">latest</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/grist_records.html">grist_records_insert</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, by <span class="op">=</span> <span class="st">"name"</span><span class="op">)</span></span>
+<span><span class="va">latest</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/grist_records.html">grist_records_update</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, by <span class="op">=</span> <span class="st">"name"</span>, unmatched <span class="op">=</span> <span class="st">"ignore"</span><span class="op">)</span></span></code></pre></div>
+<p>Grist doesn’t say which rows it skipped, so a key-based update needs
+<code>unmatched = "ignore"</code>. Updating by <code>id</code> errors if
+a row doesn’t exist, which is the default
+<code>unmatched = "error"</code>.</p>
 <p>Large writes are sent in chunks. With <code>convert = "auto"</code>,
 a column that doesn’t exist in the table is an error, so typos surface
 before anything is sent.</p>
@@ -206,7 +217,12 @@ signatures stay short:</p>
 <code class="sourceCode R"><span><span class="va">doc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/grist_doc.html">grist_doc</a></span><span class="op">(</span><span class="st">"&lt;doc id&gt;"</span>, options <span class="op">=</span> <span class="fu"><a href="../reference/grist-options.html">grist_request_options</a></span><span class="op">(</span>timeout <span class="op">=</span> <span class="fl">60</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/grist_records.html">grist_records</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, options <span class="op">=</span> <span class="fu"><a href="../reference/grist-options.html">grist_read_options</a></span><span class="op">(</span>col_names <span class="op">=</span> <span class="st">"label"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/grist_records.html">grist_records_add</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span>, <span class="va">new</span>, options <span class="op">=</span> <span class="fu"><a href="../reference/grist-options.html">grist_write_options</a></span><span class="op">(</span>chunk_size <span class="op">=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">new</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/grist_records.html">grist_records_add</a></span><span class="op">(</span></span>
+<span>    <span class="va">doc</span>,</span>
+<span>    <span class="st">"People"</span>,</span>
+<span>    options <span class="op">=</span> <span class="fu"><a href="../reference/grist-options.html">grist_write_options</a></span><span class="op">(</span>chunk_size <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p>Set defaults for a whole session with
 <code>options(gristmillr.request_options = ..., gristmillr.read_options = ..., gristmillr.write_options = ...)</code>.</p>
 </div>

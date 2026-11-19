@@ -75,23 +75,29 @@
 <span><span class="va">doc</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/grist_doc.html">grist_doc</a></span><span class="op">(</span><span class="st">"&lt;doc id or URL&gt;"</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/grist_tables.html">grist_tables</a></span><span class="op">(</span><span class="va">doc</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       id table_ref on_demand</span></span>
-<span><span class="co">#&gt; 1 Table1         1     FALSE</span></span>
-<span><span class="co">#&gt; 2 People         2     FALSE</span></span>
+<span><span class="co">#&gt; # A data frame: 2 × 3</span></span>
+<span><span class="co">#&gt;   id     table_ref on_demand</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;      &lt;int&gt; &lt;lgl&gt;    </span></span>
+<span><span class="co">#&gt; 1 Table1         1 FALSE    </span></span>
+<span><span class="co">#&gt; 2 People         2 FALSE</span></span>
 <span></span>
 <span><span class="va">doc</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/grist_records.html">grist_records</a></span><span class="op">(</span><span class="st">"People"</span>, filter <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>status <span class="op">=</span> <span class="st">"active"</span><span class="op">)</span>, sort <span class="op">=</span> <span class="st">"-age"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   id name age status</span></span>
-<span><span class="co">#&gt; 1  1  Ann  31 active</span></span>
-<span><span class="co">#&gt; 2  3   Cy  28 active</span></span>
+<span><span class="co">#&gt; # A data frame: 2 × 4</span></span>
+<span><span class="co">#&gt;      id name    age status</span></span>
+<span><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;chr&gt; </span></span>
+<span><span class="co">#&gt; 1     1 Ann      31 active</span></span>
+<span><span class="co">#&gt; 2     3 Cy       28 active</span></span>
 <span></span>
-<span><span class="va">doc</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/grist_records.html">grist_records_add</a></span><span class="op">(</span><span class="st">"People"</span>, <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Dee"</span>, age <span class="op">=</span> <span class="fl">52L</span>, status <span class="op">=</span> <span class="st">"active"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Dee"</span>, age <span class="op">=</span> <span class="fl">52L</span>, status <span class="op">=</span> <span class="st">"active"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/grist_records.html">grist_records_add</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"People"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/grist_sql.html">grist_sql</a></span><span class="op">(</span><span class="va">doc</span>, <span class="st">"SELECT status, COUNT(*) AS n FROM People GROUP BY status"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    status n</span></span>
-<span><span class="co">#&gt; 1  active 3</span></span>
-<span><span class="co">#&gt; 2 pending 1</span></span></code></pre></div>
+<span><span class="co">#&gt; # A data frame: 2 × 2</span></span>
+<span><span class="co">#&gt;   status      n</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;   &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1 active      3</span></span>
+<span><span class="co">#&gt; 2 pending     1</span></span></code></pre></div>
 <p>To move data in or out, <code><a href="reference/grist_export.html">grist_export()</a></code> writes tables to Parquet, CSV or JSON files with a <a href="https://data-dict.tidyverse.org/" class="external-link">data-dict</a> description of their columns and references, and <code><a href="reference/grist_import.html">grist_import()</a></code> loads them into another document. See <code><a href="articles/migrating-data.html">vignette("migrating-data")</a></code> for moving data in from other tools.</p>
 <p>See <code><a href="articles/gristmillr.html">vignette("gristmillr")</a></code> to get started and <code><a href="articles/joining-tables.html">vignette("joining-tables")</a></code> for working with reference columns.</p>
 </div>

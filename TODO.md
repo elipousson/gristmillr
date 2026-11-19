@@ -171,7 +171,8 @@ Pin a minimum S7 version in `DESCRIPTION`, and replace the development
 Reorder `NEWS.md` (the newest items first) and wrap long lines.
 
 Re-knit `README.Rmd` against a live server after the API changes, and
-update the vignettes and the README function table.
+update the vignettes. The README output now prints with pillar’s
+`# A data frame:` header because pillar was installed when it was knit.
 
 ## Records API redesign
 
@@ -208,13 +209,37 @@ Rename `onmany` to `multiple` (`"first"`, `"all"`, `"none"`), after
 
 Drop `mode` from
 [`grist_records_upsert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md),
-which `grist_records_insert()` and the `unmatched` argument of
+which
+[`grist_records_insert()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
+and the `unmatched` argument of
 [`grist_records_update()`](https://elipousson.github.io/gristmillr/reference/grist_records.md)
 replace.
 
 Decide return values for the schema and document functions in the same
 pass. They should follow the same rule, and `grist_workspace_*()` return
-an ID where `grist_doc_*()` return a handle.
+an ID where `grist_doc_*()` return a handle. Items to settle:
+
+[`grist_columns_add()`](https://elipousson.github.io/gristmillr/reference/grist_columns.md)
+returns the new column IDs (invisibly) but
+[`grist_columns_modify()`](https://elipousson.github.io/gristmillr/reference/grist_columns.md)
+returns `doc`. Make both return `doc` so calls can be piped, and let
+[`grist_columns()`](https://elipousson.github.io/gristmillr/reference/grist_columns.md)
+give the IDs.
+
+[`grist_table_create()`](https://elipousson.github.io/gristmillr/reference/grist_tables.md)
+and the other table functions: decide whether they return `doc` or the
+table ID, and apply the same rule everywhere.
+
+`grist_workspace_*()` return an ID where `grist_doc_*()` return a
+handle. Decide on one rule (a handle, or the ID) for create, rename and
+delete.
+
+Decide whether the schema functions should take `doc` first and return
+it (pipe a `doc` through several schema changes) rather than returning
+IDs.
+
+Check every `@returns` section, example and test after the change, and
+update the vignette and README.
 
 ## Booleans to review
 

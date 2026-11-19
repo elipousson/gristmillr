@@ -48,10 +48,21 @@
 #'   `grist_records_update()`, `data` must also have an integer `id` column. For
 #'   `grist_records_delete()`, `data` is a data frame with an `id` column (such
 #'   as the result of [grist_records()]) or a vector of row IDs.
-#' @param by Character vector of columns that identify a record, such as
-#'   `"email"`. Each row of `data` is matched against the table on these
-#'   columns. `data` must contain them, with no missing values and no
-#'   duplicated combinations.
+#' @param by Columns that identify a record. For `grist_records_update()` the
+#'   default, `"id"`, updates the rows whose row IDs are in `data$id`. Otherwise
+#'   `by` is a character vector of columns, such as `"email"`, and each row of
+#'   `data` is matched against the table on these columns. `data` must contain
+#'   them, with no missing values and no duplicated combinations, and no `id`
+#'   column.
+#' @param unmatched What to do with a row of `data` that matches no record in
+#'   the table. Grist's two ways to update records support one value each:
+#'   `"error"` when `by = "id"`, because Grist errors on a row ID that doesn't
+#'   exist, and `"ignore"` when `by` is another column, because Grist skips
+#'   rows with no match and doesn't report which. A call that asks for the
+#'   other value is an error, so key-based updates need `unmatched = "ignore"`.
+#' @param multiple What to do when several records in the table match one row of
+#'   `data`: update the `"first"` one, update `"all"` of them, or update
+#'   `"none"` of them. Only used when `by` is not `"id"`.
 #' @param mode What to do with each row of `data`: `"upsert"` updates the
 #'   record with matching `by` values and adds a record if there is none.
 #'   `"update"` only updates matching records and skips rows that match
@@ -76,7 +87,12 @@
 #' new <- data.frame(pet = c("cat", "dog"), popularity = c(67L, 95L))
 #' added <- new |> grist_records_add(doc, "Pets")
 #'
-#' grist_records_update(doc, "Pets", data.frame(id = added$id, popularity = 1L))
+#' data.frame(id = added$id, popularity = 1L) |>
+#'   grist_records_update(doc, "Pets")
+#'
+#' # Match on a column. Grist skips rows that match nothing.
+#' data.frame(pet = "cat", popularity = 70L) |>
+#'   grist_records_update(doc, "Pets", by = "pet", unmatched = "ignore")
 #'
 #' # Match on a column instead of the row ID: update cats, add rabbits
 #' pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))
@@ -165,28 +181,51 @@ grist_records_add <- function(
 #' @rdname grist_records
 #' @export
 grist_records_update <- function(
+  data,
   doc,
   table,
-  data,
+  by = "id",
+  unmatched = c("error", "ignore"),
+  multiple = c("first", "all", "none"),
   convert = c("auto", "basic", "raw"),
   options = NULL
 ) {
+  check_data_frame(data)
   doc <- grist_doc(doc)
   check_string(table)
-  check_data_frame(data)
+  check_by(by)
+  unmatched <- arg_match(unmatched)
+  multiple <- arg_match(multiple)
   convert <- arg_match(convert)
   options <- as_write_options(options)
 
+  if (!identical(by, "id")) {
+    check_unmatched(unmatched, "ignore", by)
+    check_upsert_by(data, by)
+    put_records(
+      data,
+      doc,
+      table,
+      by,
+      mode = "update",
+      multiple = multiple,
+      convert = convert,
+      options = options
+    )
+    return(invisible(data))
+  }
+
+  check_unmatched(unmatched, "error", by)
   if (!"id" %in% names(data)) {
     cli::cli_abort(
       "{.arg data} must have an {.field id} column to update records."
     )
   }
 
-  data$id <- as_row_ids(data$id, arg = "data$id")
-
-  data <- prepare_write_data(doc, table, data, convert, options)
-  records <- df_to_records(data, with_id = TRUE, convert = convert)
+  data_with_ids <- data
+  data_with_ids$id <- as_row_ids(data$id, arg = "data$id")
+  records <- prepare_write_data(doc, table, data_with_ids, convert, options) |>
+    df_to_records(with_id = TRUE, convert = convert)
 
   for (chunk in chunk_rows(length(records), options@chunk_size)) {
     grist_request(doc, "tables", table, "records") |>
@@ -195,7 +234,7 @@ grist_records_update <- function(
       req_json_body(list(records = records[chunk])) |>
       grist_perform()
   }
-  invisible(doc)
+  invisible(data)
 }
 
 #' @rdname grist_records
@@ -242,6 +281,91 @@ grist_records_upsert <- function(
       grist_perform()
   }
   invisible(doc)
+}
+
+# Send records to the endpoint that matches rows on the `by` columns. `mode`
+# is `"upsert"`, `"update"` (skip rows with no match) or `"insert"` (skip rows
+# that match). Grist doesn't report which rows were skipped.
+put_records <- function(
+  data,
+  doc,
+  table,
+  by,
+  mode,
+  multiple = "first",
+  convert,
+  options,
+  call = caller_env()
+) {
+  records <- prepare_write_data(doc, table, data, convert, options, call) |>
+    df_to_records(with_id = FALSE, convert = convert) |>
+    map(function(rec) {
+      list(
+        require = rec$fields[by],
+        fields = rec$fields[setdiff(names(rec$fields), by)]
+      )
+    })
+
+  for (chunk in chunk_rows(length(records), options@chunk_size)) {
+    grist_request(doc, "tables", table, "records") |>
+      httr2::req_method("PUT") |>
+      req_noparse(options) |>
+      httr2::req_url_query(
+        onmany = if (multiple != "first") multiple,
+        noadd = if (mode == "update") "true",
+        noupdate = if (mode == "insert") "true"
+      ) |>
+      req_json_body(list(records = records[chunk])) |>
+      grist_perform()
+  }
+  invisible()
+}
+
+# Grist updates rows by ID with `PATCH`, which errors on a row that doesn't
+# exist, and matches other columns with `PUT`, which skips rows with no match
+# without saying which. Each endpoint supports one value of `unmatched`.
+check_unmatched <- function(unmatched, allowed, by, call = caller_env()) {
+  if (unmatched == allowed) {
+    return(invisible())
+  }
+  if (allowed == "error") {
+    cli::cli_abort(
+      c(
+        'Can\'t use {.code unmatched = "ignore"} when {.code by = "id"}.',
+        i = "Grist errors when a row ID doesn't exist.",
+        i = "Set {.arg by} to a key column to skip rows with no match."
+      ),
+      class = "gristmillr_unmatched",
+      call = call
+    )
+  }
+  cli::cli_abort(
+    c(
+      'Can\'t use {.code unmatched = "error"} when {.arg by} is not {.val id}.',
+      i = "Grist skips rows with no match, and doesn't say which.",
+      i = 'Use {.code unmatched = "ignore"}.'
+    ),
+    class = "gristmillr_unmatched",
+    call = call
+  )
+}
+
+check_by <- function(by, call = caller_env()) {
+  if (!is.character(by) || length(by) == 0 || anyNA(by) || anyDuplicated(by)) {
+    cli::cli_abort(
+      "{.arg by} must be a character vector of column names, not {.obj_type_friendly {by}}.",
+      call = call
+    )
+  }
+  if (length(by) > 1 && "id" %in% by) {
+    cli::cli_abort(
+      c(
+        "{.arg by} can't combine {.val id} with other columns.",
+        i = 'Use {.code by = "id"} on its own to match row IDs.'
+      ),
+      call = call
+    )
+  }
 }
 
 req_noparse <- function(req, options) {

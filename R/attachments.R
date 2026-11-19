@@ -17,10 +17,8 @@
 #' ```r
 #' ids <- grist_attachments_upload(doc, c("a.pdf", "b.pdf"))
 #'
-#' grist_records_update(
-#'   doc, "Reports",
-#'   data.frame(id = 1L, files = I(list(ids)))
-#' )
+#' data.frame(id = 1L, files = I(list(ids))) |>
+#'   grist_records_update(doc, "Reports")
 #' ```
 #'
 #' With `convert = "auto"`, `Attachments` columns are read back as list-columns

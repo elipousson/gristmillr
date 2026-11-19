@@ -191,15 +191,10 @@ test_that("grist_records_update() sends PATCH requests with IDs", {
   local_grist_env()
   mock <- local_grist_mock(json_resp(""))
 
-  doc <- test_doc()
-  out <- grist_records_update(
-    doc,
-    "People",
-    data.frame(id = c(1L, 2L), age = c(5L, 6L)),
-    convert = "basic"
-  )
+  data <- data.frame(id = c(1L, 2L), age = c(5L, 6L))
+  out <- grist_records_update(data, test_doc(), "People", convert = "basic")
 
-  expect_identical(out, doc)
+  expect_identical(out, data)
   expect_equal(httr2::req_get_method(mock$reqs[[1]]), "PATCH")
   expect_equal(
     as.character(req_body(mock$reqs[[1]])),
@@ -207,10 +202,67 @@ test_that("grist_records_update() sends PATCH requests with IDs", {
   )
 })
 
+test_that("grist_records_update() matches other columns with PUT", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp(""))
+
+  data <- data.frame(name = c("Ann", "Bob"), age = c(5L, 6L))
+  out <- grist_records_update(
+    data,
+    test_doc(),
+    "People",
+    by = "name",
+    unmatched = "ignore",
+    multiple = "all",
+    convert = "basic"
+  )
+
+  expect_identical(out, data)
+  expect_equal(httr2::req_get_method(mock$reqs[[1]]), "PUT")
+  expect_match(mock$reqs[[1]]$url, "onmany=all")
+  expect_match(mock$reqs[[1]]$url, "noadd=true")
+  expect_no_match(mock$reqs[[1]]$url, "noupdate")
+  expect_equal(
+    as.character(req_body(mock$reqs[[1]])),
+    paste0(
+      '{"records":[{"require":{"name":"Ann"},"fields":{"age":5}},',
+      '{"require":{"name":"Bob"},"fields":{"age":6}}]}'
+    )
+  )
+})
+
+test_that("grist_records_update() only supports the unmatched value Grist can", {
+  local_grist_env()
+  mock <- local_grist_mock(json_resp(""))
+  data <- data.frame(id = 1L, name = "Ann")
+
+  expect_error(
+    grist_records_update(data, test_doc(), "People", unmatched = "ignore"),
+    class = "gristmillr_unmatched"
+  )
+  expect_error(
+    grist_records_update(data[-1], test_doc(), "People", by = "name"),
+    class = "gristmillr_unmatched"
+  )
+  expect_snapshot(
+    grist_records_update(data, test_doc(), "People", unmatched = "ignore"),
+    error = TRUE
+  )
+  expect_snapshot(
+    grist_records_update(data[-1], test_doc(), "People", by = "name"),
+    error = TRUE
+  )
+  expect_snapshot(
+    grist_records_update(data, test_doc(), "People", by = c("id", "name")),
+    error = TRUE
+  )
+  expect_length(mock$reqs, 0)
+})
+
 test_that("grist_records_update() requires an id column", {
   local_grist_env()
   expect_snapshot(
-    grist_records_update(test_doc(), "People", data.frame(x = 1)),
+    grist_records_update(data.frame(x = 1), test_doc(), "People"),
     error = TRUE
   )
 })
@@ -282,9 +334,9 @@ test_that("grist_records_update() validates and converts ids", {
   mock <- local_grist_mock(json_resp("{}"))
 
   grist_records_update(
+    data.frame(id = c(1, 2), age = 3:4),
     test_doc(),
     "People",
-    data.frame(id = c(1, 2), age = 3:4),
     convert = "basic"
   )
   expect_equal(
@@ -294,9 +346,9 @@ test_that("grist_records_update() validates and converts ids", {
 
   expect_snapshot(
     grist_records_update(
+      data.frame(id = c(1, 1.5), age = 3:4),
       test_doc(),
       "People",
-      data.frame(id = c(1, 1.5), age = 3:4),
       convert = "basic"
     ),
     error = TRUE
@@ -483,9 +535,9 @@ test_that("write options `parse = FALSE` sends noparse", {
   grist_records_add(data, test_doc(), "People", convert = "basic")
   grist_records_add(data, test_doc(), "People", convert = "basic", options = opts)
   grist_records_update(
+    data.frame(id = 1L, name = "Ann"),
     test_doc(),
     "People",
-    data.frame(id = 1L, name = "Ann"),
     convert = "basic",
     options = opts
   )

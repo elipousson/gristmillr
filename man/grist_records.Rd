@@ -27,9 +27,12 @@ grist_records_add(
 )
 
 grist_records_update(
+  data,
   doc,
   table,
-  data,
+  by = "id",
+  unmatched = c("error", "ignore"),
+  multiple = c("first", "all", "none"),
   convert = c("auto", "basic", "raw"),
   options = NULL
 )
@@ -76,10 +79,23 @@ piped in. Each column must be a column of the Grist table. For
 \code{grist_records_delete()}, \code{data} is a data frame with an \code{id} column (such
 as the result of \code{\link[=grist_records]{grist_records()}}) or a vector of row IDs.}
 
-\item{by}{Character vector of columns that identify a record, such as
-\code{"email"}. Each row of \code{data} is matched against the table on these
-columns. \code{data} must contain them, with no missing values and no
-duplicated combinations.}
+\item{by}{Columns that identify a record. For \code{grist_records_update()} the
+default, \code{"id"}, updates the rows whose row IDs are in \code{data$id}. Otherwise
+\code{by} is a character vector of columns, such as \code{"email"}, and each row of
+\code{data} is matched against the table on these columns. \code{data} must contain
+them, with no missing values and no duplicated combinations, and no \code{id}
+column.}
+
+\item{unmatched}{What to do with a row of \code{data} that matches no record in
+the table. Grist's two ways to update records support one value each:
+\code{"error"} when \code{by = "id"}, because Grist errors on a row ID that doesn't
+exist, and \code{"ignore"} when \code{by} is another column, because Grist skips
+rows with no match and doesn't report which. A call that asks for the
+other value is an error, so key-based updates need \code{unmatched = "ignore"}.}
+
+\item{multiple}{What to do when several records in the table match one row of
+\code{data}: update the \code{"first"} one, update \code{"all"} of them, or update
+\code{"none"} of them. Only used when \code{by} is not \code{"id"}.}
 
 \item{mode}{What to do with each row of \code{data}: \code{"upsert"} updates the
 record with matching \code{by} values and adds a record if there is none.
@@ -142,7 +158,12 @@ grist_records(doc, "Pets", filter = list(pet = "cat"), sort = "-popularity")
 new <- data.frame(pet = c("cat", "dog"), popularity = c(67L, 95L))
 added <- new |> grist_records_add(doc, "Pets")
 
-grist_records_update(doc, "Pets", data.frame(id = added$id, popularity = 1L))
+data.frame(id = added$id, popularity = 1L) |>
+  grist_records_update(doc, "Pets")
+
+# Match on a column. Grist skips rows that match nothing.
+data.frame(pet = "cat", popularity = 70L) |>
+  grist_records_update(doc, "Pets", by = "pet", unmatched = "ignore")
 
 # Match on a column instead of the row ID: update cats, add rabbits
 pets <- data.frame(pet = c("cat", "rabbit"), popularity = c(70L, 40L))

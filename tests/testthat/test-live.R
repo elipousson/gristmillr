@@ -63,7 +63,7 @@ test_that("records round-trip through a live server", {
     "Bob"
   )
 
-  grist_records_update(doc, "People", data.frame(id = ids[[1]], age = 31L))
+  grist_records_update(data.frame(id = ids[[1]], age = 31L), doc, "People")
   expect_equal(
     grist_sql(doc, "select age from People where name = ?", args = "Ann")$age,
     31L

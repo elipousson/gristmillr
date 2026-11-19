@@ -68,10 +68,39 @@
       Error in `grist_records_add()`:
       ! `data` must be a data frame, not a list.
 
+# grist_records_update() only supports the unmatched value Grist can
+
+    Code
+      grist_records_update(data, test_doc(), "People", unmatched = "ignore")
+    Condition
+      Error in `grist_records_update()`:
+      ! Can't use `unmatched = "ignore"` when `by = "id"`.
+      i Grist errors when a row ID doesn't exist.
+      i Set `by` to a key column to skip rows with no match.
+
+---
+
+    Code
+      grist_records_update(data[-1], test_doc(), "People", by = "name")
+    Condition
+      Error in `grist_records_update()`:
+      ! Can't use `unmatched = "error"` when `by` is not "id".
+      i Grist skips rows with no match, and doesn't say which.
+      i Use `unmatched = "ignore"`.
+
+---
+
+    Code
+      grist_records_update(data, test_doc(), "People", by = c("id", "name"))
+    Condition
+      Error in `grist_records_update()`:
+      ! `by` can't combine "id" with other columns.
+      i Use `by = "id"` on its own to match row IDs.
+
 # grist_records_update() requires an id column
 
     Code
-      grist_records_update(test_doc(), "People", data.frame(x = 1))
+      grist_records_update(data.frame(x = 1), test_doc(), "People")
     Condition
       Error in `grist_records_update()`:
       ! `data` must have an id column to update records.
@@ -96,8 +125,8 @@
 # grist_records_update() validates and converts ids
 
     Code
-      grist_records_update(test_doc(), "People", data.frame(id = c(1, 1.5), age = 3:4),
-      convert = "basic")
+      grist_records_update(data.frame(id = c(1, 1.5), age = 3:4), test_doc(),
+      "People", convert = "basic")
     Condition
       Error in `grist_records_update()`:
       ! `data$id` must be whole numbers without missing values.

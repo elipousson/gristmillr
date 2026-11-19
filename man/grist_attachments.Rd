@@ -63,10 +63,8 @@ an \code{Attachments} column as a list-column:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{ids <- grist_attachments_upload(doc, c("a.pdf", "b.pdf"))
 
-grist_records_update(
-  doc, "Reports",
-  data.frame(id = 1L, files = I(list(ids)))
-)
+data.frame(id = 1L, files = I(list(ids))) |>
+  grist_records_update(doc, "Reports")
 }\if{html}{\out{</div>}}
 
 With \code{convert = "auto"}, \code{Attachments} columns are read back as list-columns

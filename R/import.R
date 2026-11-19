@@ -206,7 +206,7 @@ grist_import <- function(
         maps[[target]]
       )
     }
-    grist_records_update(doc, table_ids[[name]], refs, options = options)
+    grist_records_update(refs, doc, table_ids[[name]], options = options)
   }
 
   set_display_columns(doc, plan, table_ids, col_ids, display)
